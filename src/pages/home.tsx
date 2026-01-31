@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber } from 'antd';
-import { PlusOutlined, FileWordOutlined, FilePdfOutlined, EyeOutlined,  } from '@ant-design/icons';
+import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber, Tabs } from 'antd';
+import { PlusOutlined, FileWordOutlined, FilePdfOutlined,  } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import type { FormProps } from 'antd';
@@ -9,7 +9,7 @@ import AppFormItem from '../components/UI/antd-form/form-Item';
 import { generateDocument, downloadBlob } from '../modules/invoice/helpers';
 import { formattedDate } from '../common/helpers/date';
 import { DATE_FORMAT } from '../common/enums/common';
-import {  RotateCw, Trash } from 'lucide-react';
+import {  Eye, RotateCw, Trash } from 'lucide-react';
 import { COMPANY_ADDRESS, COMPANY_ID, COMPANY_NAME, TAX_ID } from '../modules/invoice/constants';
 import { useConvertWordToPdf } from '../modules/invoice/hooks/use-convert-word-to-pdf';
 import SignatureCanvas from 'react-signature-canvas';
@@ -27,7 +27,8 @@ const generateRandomSuffix = (date?: Date) => {
 export default function Home() {
   const [form] = Form.useForm();
   const [invoiceNumber, setInvoiceNumber] = useState(generateRandomSuffix());
-  const [linkPreview, setLinkPreview] = useState("/preview/template-user.docx");
+  const [linkPreview, setLinkPreview] = useState<string>("/preview/template-user.docx");
+  const [activeTab, setActiveTab] = useState<string>('upload');
   const { convertToPdf, isPending } = useConvertWordToPdf();
   const signatureRef = useRef<SignatureCanvas>(null);
 
@@ -79,7 +80,6 @@ export default function Home() {
       };
 
       if (data.signatureUpload && data.signatureUpload?.length > 0) {
-        console.log('first')
         // Use uploaded signature image URL
         signatureImage = data.signatureUpload[0];
         generateDocWithSignature(signatureImage);
@@ -98,8 +98,8 @@ export default function Home() {
         }
       }
       
-      // Use canvas signature if available
-      if (signatureRef.current && !signatureRef.current.isEmpty()) {
+      // Only use canvas signature if draw tab is active
+      if (activeTab === 'draw' && signatureRef.current && !signatureRef.current.isEmpty()) {
         signatureImage = signatureRef.current.toDataURL();
       }
 
@@ -324,66 +324,95 @@ export default function Home() {
 
           {/* Payment Content */}
           <Card title="Payment Details" style={{ marginBottom: '24px' }}>
+            {/* Header */}
+            <div className='border rounded-md p-4 border-zinc-200'>
+              <Row gutter={16} align="middle" style={{ 
+              padding: '12px 12px',
+              backgroundColor: '#fafafa',
+              margin: '0 0 12px'
+             
+            }}>
+              <Col xs={24} sm={12} md={14}>
+                <span style={{ fontWeight: 600 }}>Description</span>
+              </Col>
+              <Col xs={24} sm={8} md={6}>
+                <span style={{ fontWeight: 600, textAlign: 'center', display: 'block' }}>Amount</span>
+              </Col>
+              <Col xs={24} sm={4} md={4}>
+                <span style={{ fontWeight: 600, textAlign: 'center', display: 'block' }}>Action</span>
+              </Col>
+            </Row>
+            
             <Form.List name="s">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
-                    <div key={key} style={{ marginBottom: '16px',  padding: '16px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
-                     
-                     
-                     
-                      <div className='pr-8 relative'>
-                         <AppFormItem
-                        {...restField}
-                        name={[name, 'description']}
-                        label="Description"
-                        required
-                        rules={[{ required: true, message: 'Please input description!' }]}
-                      >
-                        <Input.TextArea rows={2} placeholder="Enter description" />
-                    
-                      </AppFormItem>
-                      <AppFormItem
-                        {...restField}
-                        name={[name, 'amount']}
-                        label="Amount"
-                        required
-                        rules={[{ required: true, message: 'Please input amount!' }]}
-                      >
-                        <InputNumber 
-                          placeholder="0.00"
-                          style={{ width: '100%' }}
-                          min={0}
-                          precision={2}
-                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                        />
-                      </AppFormItem>
-
-                       <Button 
-                        type="default" 
-                        danger 
-                        icon={<Trash size={16} />} 
-                        onClick={() => remove(name)}
-                        className='my-2! absolute! right-[-6px]! top-[-6px]!'
-                      />
-                      </div>
-                      
+                    <div key={key} >
+                      <Row gutter={16} align="middle">
+                        <Col xs={24} sm={12} md={14} >
+                          <AppFormItem
+                            {...restField}
+                            name={[name, 'description']}
+                            required
+                            rules={[{ required: true, message: 'Please input description!' }]}
+                            colon={false}
+                            labelCol={{ span: 0 }}
+                            wrapperCol={{ span: 24 }}
+                          >
+                            <Input.TextArea autoSize={{
+                                minRows:1,
+                                maxRows:5
+                            }} placeholder="Enter description" style={{ width: '100%' }} />
+                          </AppFormItem>
+                        </Col>
+                        <Col xs={24} sm={8} md={6} >
+                          <AppFormItem
+                            {...restField}
+                            name={[name, 'amount']}
+                            label=""
+                            required
+                            rules={[{ required: true, message: 'Please input amount!' }]}
+                            colon={false}
+                            labelCol={{ span: 0 }}
+                            wrapperCol={{ span: 24 }}
+                          >
+                            <InputNumber 
+                              placeholder="0.00"
+                              style={{ width: '100%' }}
+                              min={0}
+                              precision={2}
+                              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            />
+                          </AppFormItem>
+                        </Col>
+                        <Col xs={24} sm={4} md={4} className="text-center">
+                          <Button 
+                            type="text" 
+                            shape='circle'
+                            danger 
+                            icon={<Trash size={16} />} 
+                            onClick={() => remove(name)}
+                            className='mb-2'
+                          />
+                        </Col>
+                      </Row>
                     </div>
                   ))}
-                    <Button 
-                      type="dashed" 
-                      onClick={() => add()} 
-                      block 
-                      icon={<PlusOutlined />}
-                      style={{
-                        width:'100%'
-                      }}
-                    >
-                      Add Item
-                    </Button>
+                  <Button 
+                    type="dashed" 
+                    onClick={() => add()} 
+                    block 
+                    icon={<PlusOutlined />}
+                    style={{
+                      width:'100%'
+                    }}
+                  >
+                    Add Item
+                  </Button>
                 </>
               )}
             </Form.List>
+            </div>
           </Card>
 
           <Card title="Payment information" style={{ marginBottom: '24px' }}>
@@ -430,35 +459,50 @@ export default function Home() {
 
           {/* Digital Signature */}
           <Card title="Digital Signature" style={{ marginBottom: '24px' }}>
-            <AppFormItem
-              label="Draw Your Signature"
-              name="signatureCanvas"
-            >
-              <div >
-                <SignatureCanvas
-                  ref={signatureRef}
-                  penColor="black"
-                  canvasProps={{
-                    width: window.innerWidth < 768 ? window.innerWidth - 80 : 400,
-                    height: 150,
-                    className: 'signature-canvas',
-                    style: { border: '1px dashed #ccc', width: '100%', maxWidth: '400px' }
-                  }}
-                />
-                <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                  <Button  onClick={clearSignature}>Clear</Button>
-                  <Button  type="primary" onClick={saveSignature}>Save Signature</Button>
-                </div>
-              </div>
-            </AppFormItem>
-            
-            <AppFormItem  
-              label="Upload Signature"
-              name="signatureUpload">
-                  <ImageListUpload maxCount={1} />
-            </AppFormItem>
-
-           
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              items={[
+                 {
+                  key: 'draw',
+                  label: 'Draw Signature',
+                  children: (
+                    <AppFormItem
+                      label="Draw Your Signature"
+                      name="signatureCanvas"
+                    >
+                      <div>
+                        <SignatureCanvas
+                          ref={signatureRef}
+                          penColor="black"
+                          canvasProps={{
+                            width: window.innerWidth < 768 ? window.innerWidth - 80 : 400,
+                            height: 150,
+                            className: 'signature-canvas',
+                            style: { border: '1px dashed #ccc', width: '100%', maxWidth: '400px' }
+                          }}
+                        />
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                          <Button onClick={clearSignature}>Clear</Button>
+                          <Button type="primary" onClick={saveSignature}>Save Signature</Button>
+                        </div>
+                      </div>
+                    </AppFormItem>
+                  )
+                },
+                {
+                  key: 'upload',
+                  label: 'Upload Signature',
+                  children: (
+                    <AppFormItem  
+                      label="Upload Signature"
+                      name="signatureUpload">
+                        <ImageListUpload maxCount={1} />
+                    </AppFormItem>
+                  )
+                }
+              ]}
+            />
           </Card>
         </AppForm>
         </Col>
@@ -468,9 +512,9 @@ export default function Home() {
             <div className='flex justify-between flex-wrap gap-2 py-2'>
               <span>Document Preview</span>
               <div className='flex gap-2 flex-wrap' >
-                <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}> Preview</Button>
+                <Button icon={<div><Eye size={16}  /></div>} type="primary" onClick={() => handlePreview()}> Preview</Button>
                 <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
-                <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download Pdf</Button>
+                <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download PDF</Button>
               </div>
           </div>
           } 
