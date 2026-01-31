@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, FileWordOutlined, FilePdfOutlined, EyeOutlined,  } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import type { FormProps } from 'antd';
 import AppForm from '../components/UI/antd-form/form';
@@ -12,12 +13,13 @@ import {  RotateCw } from 'lucide-react';
 import { COMPANY_ADDRESS, COMPANY_ID, COMPANY_NAME, TAX_ID } from '../modules/invoice/constants';
 import { useConvertWordToPdf } from '../modules/invoice/hooks/use-convert-word-to-pdf';
 import SignatureCanvas from 'react-signature-canvas';
+import ImageListUpload from '../components/UI/upload/image-list-upload';
 
-const generateRandomSuffix = () => {
-  const today = new Date();
-  const dateStr = today.getFullYear().toString() + 
-                 (today.getMonth() + 1).toString().padStart(2, '0') + 
-                 today.getDate().toString().padStart(2, '0');
+const generateRandomSuffix = (date?: Date) => {
+  const targetDate = date || new Date();
+  const dateStr = targetDate.getFullYear().toString() + 
+                 (targetDate.getMonth() + 1).toString().padStart(2, '0') + 
+                 targetDate.getDate().toString().padStart(2, '0');
   const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
   return `INV-${dateStr}-${randomNum}`;
 };
@@ -45,44 +47,71 @@ export default function Home() {
       const invoiceDate = formattedDate(data.invoiceDate, DATE_FORMAT.DATE_ONLY);
       const total = data?.s?.reduce((acc: number, s: any) => acc + Number(s.amount || 0), 0);
       
-      // Get signature data if canvas exists
-      let signatureData = '';
-      if (signatureRef.current && !signatureRef.current.isEmpty()) {
-        signatureData = signatureRef.current.toDataURL();
-      }
-      
-      // Format amount fields with international number format
-      const formattedData = {
-        ...data,
-        invoiceDate,
-        s: data?.s?.map((item: any) => ({
-          ...item,
-          amount: Number(item.amount || 0).toLocaleString('en-US', {
+       // Get signature data - prioritize uploaded image over canvas signature
+      let signatureImage = '';
+
+      const generateDocWithSignature = (signatureImage: string) => {
+        // Format amount fields with international number format
+        const formattedData = {
+          ...data,
+          invoiceDate,
+          s: data?.s?.map((item: any) => ({
+            ...item,
+            amount: Number(item.amount || 0).toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })
+          })),
+          total: total.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-          })
-        })),
-        total: total.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }),
-        signatureImage: signatureData,
-      };
-      
-       generateDocument({
-            data: formattedData,
-            readUrl: "/preview/template.docx",
-            onPreview(blobUrl) {
-                setLinkPreview(blobUrl);
-            },
+          }),
+          signatureImage,
+        };
+        
+        generateDocument({
+          data: formattedData,
+          readUrl: "/preview/template.docx",
+          onPreview(blobUrl: string) {
+            setLinkPreview(blobUrl);
+          },
         });
+      };
+
+      if (data.signatureUpload && data.signatureUpload?.length > 0) {
+        console.log('first')
+        // Use uploaded signature image URL
+        signatureImage = data.signatureUpload[0];
+        generateDocWithSignature(signatureImage);
+        return;
+      } else if (data.signatureUpload && data.signatureUpload?.fileList?.length > 0) {
+        // Convert file to base64 for Word document
+        const file = data.signatureUpload.fileList[0].originFileObj;
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            generateDocWithSignature(base64String);
+          };
+          reader.readAsDataURL(file);
+          return; // Exit early, will continue in onload callback
+        }
+      }
+      
+      // Use canvas signature if available
+      if (signatureRef.current && !signatureRef.current.isEmpty()) {
+        signatureImage = signatureRef.current.toDataURL();
+      }
+
+      console.log("🚀 ~ handlePreview ~ signatureImage:", signatureImage)
+      generateDocWithSignature(signatureImage);
     
   };
 
   const clearSignature = () => {
     if (signatureRef.current) {
       signatureRef.current.clear();
-      form.setFieldValue('signatureImage', '');
+      form.setFieldValue('signatureCanvas', '');
       handlePreview();
     }
   };
@@ -90,7 +119,7 @@ export default function Home() {
   const saveSignature = () => {
     if (signatureRef.current && !signatureRef.current.isEmpty()) {
       const signatureData = signatureRef.current.toDataURL();
-      form.setFieldValue('signatureImage', signatureData);
+      form.setFieldValue('signatureCanvas', signatureData);
       handlePreview();
     }
   };
@@ -151,16 +180,25 @@ export default function Home() {
   useEffect(() => {
     form.setFieldsValue({
       invoiceNumber,
-      
     });
   }, [form, invoiceNumber]);
+
+  // Update invoice number when invoice date changes
+  const handleInvoiceDateChange = (date: any) => {
+    if (date) {
+      const selectedDate = date.toDate(); // Convert dayjs to Date
+      const newInvoiceNumber = generateRandomSuffix(selectedDate);
+      setInvoiceNumber(newInvoiceNumber);
+      form.setFieldValue('invoiceNumber', newInvoiceNumber);
+    }
+  };
 
 
   return (
     <div className='h-screen p-4'>
         {/* <Button type="primary" onClick={() => setLinkPreview("/preview/template.docx")}>Sample</Button> */}
       <Row gutter={16} style={{ height: 'calc(100vh - 2rem)' }}>
-        <Col span={12} style={{ height: '100%', overflowY: 'auto' }}>
+        <Col xs={24} lg={12} style={{ height: '100%', overflowY: 'auto' }}>
           <AppForm
             form={form}
             layout="horizontal"
@@ -172,6 +210,8 @@ export default function Home() {
               billToAddress: COMPANY_ADDRESS,
               billToTaxId: TAX_ID,
               billToCompany: COMPANY_ID,
+              invoiceDate: dayjs(),
+              s: [{ description: '', amount: 0 }],
             }}
           >
           {/* Invoice Information */}
@@ -182,7 +222,7 @@ export default function Home() {
               required
               rules={[{ required: true, message: 'Please select date!' }]}
             >
-              <DatePicker style={{ width: '100%' }} />
+              <DatePicker style={{ width: '100%' }} onChange={handleInvoiceDateChange} />
             </AppFormItem>
             <AppFormItem
               label="Invoice No."
@@ -289,7 +329,19 @@ export default function Home() {
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
-                    <div key={key} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
+                    <div key={key} style={{ marginBottom: '16px',  padding: '16px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
+                     
+                      <div className='flex justify-end'>
+                      <Button 
+                        type="text" 
+                        danger 
+                        icon={<MinusCircleOutlined />} 
+                        onClick={() => remove(name)}
+                        className='my-2!'
+                      >
+                        Remove
+                      </Button>
+                      </div>
                       <AppFormItem
                         {...restField}
                         name={[name, 'description']}
@@ -298,6 +350,7 @@ export default function Home() {
                         rules={[{ required: true, message: 'Please input description!' }]}
                       >
                         <Input.TextArea rows={2} placeholder="Enter description" />
+                    
                       </AppFormItem>
                       <AppFormItem
                         {...restField}
@@ -314,14 +367,7 @@ export default function Home() {
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         />
                       </AppFormItem>
-                      <Button 
-                        type="text" 
-                        danger 
-                        icon={<MinusCircleOutlined />} 
-                        onClick={() => remove(name)}
-                      >
-                        Remove
-                      </Button>
+                      
                     </div>
                   ))}
                     <Button 
@@ -360,16 +406,16 @@ export default function Home() {
             <AppFormItem
               label="Account number Bank"
               name="accountNumber"
-              required
-              rules={[{ required: true, message: 'Please input account number!' }]}
+              // required
+              // rules={[{ required: true, message: 'Please input account number!' }]}
             >
               <Input placeholder="Enter account number" />
             </AppFormItem>
             <AppFormItem
               label="SWIFT code Bank"
               name="swiftCode"
-              required
-              rules={[{ required: true, message: 'Please input SWIFT code!' }]}
+              // required
+              // rules={[{ required: true, message: 'Please input SWIFT code!' }]}
             >
               <Input placeholder="Enter SWIFT code" />
             </AppFormItem>
@@ -387,14 +433,14 @@ export default function Home() {
           <Card title="Digital Signature" style={{ marginBottom: '24px' }}>
             <AppFormItem
               label="Draw Your Signature"
-              name="signatureImage"
+              name="signatureCanvas"
             >
               <div >
                 <SignatureCanvas
                   ref={signatureRef}
                   penColor="black"
                   canvasProps={{
-                    width: 400,
+                    width: window.innerWidth < 768 ? window.innerWidth - 80 : 400,
                     height: 150,
                     className: 'signature-canvas',
                     style: { border: '1px dashed #ccc', width: '100%', maxWidth: '400px' }
@@ -406,18 +452,27 @@ export default function Home() {
                 </div>
               </div>
             </AppFormItem>
+            
+            <AppFormItem  
+              label="Upload Signature"
+              name="signatureUpload">
+                  <ImageListUpload maxCount={1} />
+            </AppFormItem>
+
+           
           </Card>
         </AppForm>
         </Col>
         
-        <Col span={12} style={{ height: '100%', overflow: 'hidden' }}>
-          <Card  title='Document Preview' extra={<div className='space-x-2' >
-            <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>
-              Word
-            </Button>
-            <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Pdf</Button>
-            <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}>Preview</Button>
-          </div>} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Col xs={24} lg={12} style={{ height: '100%', overflow: 'hidden' }}>
+          <Card  title='Document Preview' extra={
+            <div className='space-x-2' >
+              <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}> Preview</Button>
+              <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
+              <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download Pdf</Button>
+            </div>
+        } style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+
             <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: '6px', height: '90vh', overflow: 'auto' }}>
               <DocxViewer  filePath={linkPreview} />
             </div>

@@ -71,7 +71,7 @@ export const generateDocument = async ({
                 return null;
             },
             getSize: () => {
-                return [200, 100]; // width, height in pixels
+                return [200, 150]; // width, height in pixels - reasonable size for signature
             },
         });
 
