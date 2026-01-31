@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber } from 'antd';
-import { PlusOutlined, MinusCircleOutlined, FileWordOutlined, FilePdfOutlined, EyeOutlined,  } from '@ant-design/icons';
+import { PlusOutlined, FileWordOutlined, FilePdfOutlined, EyeOutlined,  } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import type { FormProps } from 'antd';
@@ -9,7 +9,7 @@ import AppFormItem from '../components/UI/antd-form/form-Item';
 import { generateDocument, downloadBlob } from '../modules/invoice/helpers';
 import { formattedDate } from '../common/helpers/date';
 import { DATE_FORMAT } from '../common/enums/common';
-import {  RotateCw } from 'lucide-react';
+import {  RotateCw, Trash } from 'lucide-react';
 import { COMPANY_ADDRESS, COMPANY_ID, COMPANY_NAME, TAX_ID } from '../modules/invoice/constants';
 import { useConvertWordToPdf } from '../modules/invoice/hooks/use-convert-word-to-pdf';
 import SignatureCanvas from 'react-signature-canvas';
@@ -103,7 +103,6 @@ export default function Home() {
         signatureImage = signatureRef.current.toDataURL();
       }
 
-      console.log("🚀 ~ handlePreview ~ signatureImage:", signatureImage)
       generateDocWithSignature(signatureImage);
     
   };
@@ -197,8 +196,8 @@ export default function Home() {
   return (
     <div className='h-screen p-4'>
         {/* <Button type="primary" onClick={() => setLinkPreview("/preview/template.docx")}>Sample</Button> */}
-      <Row gutter={16} style={{ height: 'calc(100vh - 2rem)' }}>
-        <Col xs={24} lg={12} style={{ height: '100%', overflowY: 'auto' }}>
+      <Row gutter={16} className="h-[calc(100vh-2rem)] lg:h-[calc(100vh-2rem)]" >
+        <Col xs={24} lg={12} className="h-auto lg:h-full" style={{ overflowY: 'auto' }}>
           <AppForm
             form={form}
             layout="horizontal"
@@ -331,18 +330,10 @@ export default function Home() {
                   {fields.map(({ key, name, ...restField }) => (
                     <div key={key} style={{ marginBottom: '16px',  padding: '16px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
                      
-                      <div className='flex justify-end'>
-                      <Button 
-                        type="text" 
-                        danger 
-                        icon={<MinusCircleOutlined />} 
-                        onClick={() => remove(name)}
-                        className='my-2!'
-                      >
-                        Remove
-                      </Button>
-                      </div>
-                      <AppFormItem
+                     
+                     
+                      <div className='pr-8 relative'>
+                         <AppFormItem
                         {...restField}
                         name={[name, 'description']}
                         label="Description"
@@ -367,6 +358,15 @@ export default function Home() {
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         />
                       </AppFormItem>
+
+                       <Button 
+                        type="default" 
+                        danger 
+                        icon={<Trash size={16} />} 
+                        onClick={() => remove(name)}
+                        className='my-2! absolute! right-[-6px]! top-[-6px]!'
+                      />
+                      </div>
                       
                     </div>
                   ))}
@@ -422,8 +422,7 @@ export default function Home() {
             <AppFormItem
               label="Address"
               name="bankAddress"
-              required
-              rules={[{ required: true, message: 'Please input address!' }]}
+              
             >
               <Input placeholder="Enter address" />
             </AppFormItem>
@@ -464,16 +463,20 @@ export default function Home() {
         </AppForm>
         </Col>
         
-        <Col xs={24} lg={12} style={{ height: '100%', overflow: 'hidden' }}>
-          <Card  title='Document Preview' extra={
-            <div className='space-x-2' >
-              <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}> Preview</Button>
-              <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
-              <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download Pdf</Button>
-            </div>
-        } style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Col xs={24} lg={12} className="h-auto lg:h-full" style={{ overflow: 'hidden' }}>
+          <Card  title={
+            <div className='flex justify-between flex-wrap gap-2 py-2'>
+              <span>Document Preview</span>
+              <div className='flex gap-2 flex-wrap' >
+                <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}> Preview</Button>
+                <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
+                <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download Pdf</Button>
+              </div>
+          </div>
+          } 
+         style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 
-            <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: '6px', height: '90vh', overflow: 'auto' }}>
+            <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: '6px', height: 'auto', overflow: 'auto' }} className="lg:h-[90vh]!">
               <DocxViewer  filePath={linkPreview} />
             </div>
           </Card>
