@@ -103,7 +103,6 @@ export default function Home() {
         signatureImage = signatureRef.current.toDataURL();
       }
 
-      console.log("🚀 ~ handlePreview ~ signatureImage:", signatureImage)
       generateDocWithSignature(signatureImage);
     
   };
@@ -466,7 +465,7 @@ export default function Home() {
         
         <Col xs={24} lg={12} className="h-auto lg:h-full" style={{ overflow: 'hidden' }}>
           <Card  title={
-            <div className='flex justify-between flex-wrap gap-2'>
+            <div className='flex justify-between flex-wrap gap-2 py-2'>
               <span>Document Preview</span>
               <div className='flex gap-2 flex-wrap' >
                 <Button icon={<EyeOutlined />} type="primary" onClick={() => handlePreview()}> Preview</Button>
