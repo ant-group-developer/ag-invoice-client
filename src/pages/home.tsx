@@ -76,7 +76,7 @@ export default function Home() {
           onPreview(blobUrl: string) {
             setLinkPreview(blobUrl);
           },
-          onDownload: (blob: Blob, _filename: string) => {
+          onDownload: (blob: Blob) => {
             const timestamp = Date.now();
             const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
             downloadBlob(blob, newFilename);
