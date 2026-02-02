@@ -22,6 +22,42 @@ export const convertToPdf = async (docxBlob: Blob, filename: string) => {
     console.log('PDF conversion requires server-side processing or additional libraries');
 };
 
+// Cache for image dimensions
+const imageDimensionsCache = new Map<string, [number, number]>();
+
+// Helper function to get image dimensions from base64
+const getImageDimensions = (base64String: string): Promise<[number, number]> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const maxWidth = 300;
+            const maxHeight = 150;
+            
+            let width = img.width;
+            let height = img.height;
+            
+            // Scale down if too large, maintaining aspect ratio
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            resolve([Math.round(width), Math.round(height)]);
+        };
+        
+        img.onerror = () => {
+            resolve([250, 100]); // fallback on error
+        };
+        
+        img.src = base64String;
+    });
+};
+
 export const generateDocument = async ({
     data,
     readUrl,
@@ -36,6 +72,12 @@ export const generateDocument = async ({
     if (!readUrl) return;
 
     try {
+        // Pre-calculate image dimensions if signatureImage exists
+        if (data.signatureImage && data.signatureImage.startsWith('data:image')) {
+            const dimensions = await getImageDimensions(data.signatureImage);
+            imageDimensionsCache.set(data.signatureImage, dimensions);
+        }
+
         // 1. Load file template (.docx)
         const arrayBuffer = await fetch(readUrl)
             .then((res) => res.arrayBuffer())
@@ -70,8 +112,14 @@ export const generateDocument = async ({
                 }
                 return null;
             },
-            getSize: () => {
-                return [200, 80]; // width, height in pixels - reasonable size for signature
+            getSize: function(): [number, number] {
+                // Try to get cached dimensions
+                if (data.signatureImage && imageDimensionsCache.has(data.signatureImage)) {
+                    return imageDimensionsCache.get(data.signatureImage)!;
+                }
+                
+                // Fallback to default size
+                return [250, 100];
             },
         });
 

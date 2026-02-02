@@ -7,7 +7,7 @@ import type { FormProps } from 'antd';
 import AppForm from '../components/UI/antd-form/form';
 import AppFormItem from '../components/UI/antd-form/form-Item';
 import { generateDocument, downloadBlob } from '../modules/invoice/helpers';
-import { formattedDate } from '../common/helpers/date';
+import { formattedDate} from '../common/helpers/date';
 import { DATE_FORMAT } from '../common/enums/common';
 import {  Eye, RotateCw, Trash } from 'lucide-react';
 import { COMPANY_ADDRESS, COMPANY_ID, COMPANY_NAME, TAX_ID } from '../modules/invoice/constants';
@@ -79,13 +79,11 @@ export default function Home() {
         });
       };
 
-      if (data.signatureUpload && data.signatureUpload?.length > 0) {
-        // Use uploaded signature image URL
-        signatureImage = data.signatureUpload[0];
-        generateDocWithSignature(signatureImage);
-        return;
-      } else if (data.signatureUpload && data.signatureUpload?.fileList?.length > 0) {
-        // Convert file to base64 for Word document
+      // Only use canvas signature if draw tab is active
+      if (activeTab === 'draw' && signatureRef.current && !signatureRef.current.isEmpty()) {
+        signatureImage = signatureRef.current.toDataURL();
+      } else if(activeTab === 'upload' && data.signatureUpload && data.signatureUpload?.fileList?.length > 0) {
+         // Convert file to base64 for Word document
         const file = data.signatureUpload.fileList[0].originFileObj;
         if (file) {
           const reader = new FileReader();
@@ -97,14 +95,8 @@ export default function Home() {
           return; // Exit early, will continue in onload callback
         }
       }
-      
-      // Only use canvas signature if draw tab is active
-      if (activeTab === 'draw' && signatureRef.current && !signatureRef.current.isEmpty()) {
-        signatureImage = signatureRef.current.toDataURL();
-      }
 
       generateDocWithSignature(signatureImage);
-    
   };
 
   const clearSignature = () => {
@@ -130,16 +122,22 @@ export default function Home() {
       // Validate form first
       await form.validateFields();
       
+      // Generate filename with today's date and timestamp using dayjs
+      const now = dayjs();
+      const date = formattedDate(now, DATE_FORMAT.DATE_ONLY)
+      const timestamp = now.valueOf();
+      const filename = `Invoice-${date}-${timestamp}.docx`;
+      
       if (linkPreview === "/preview/template.docx") {
         // Fetch and download the original template file
         const response = await fetch(linkPreview);
         const blob = await response.blob();
-        downloadBlob(blob, 'template.docx');
+        downloadBlob(blob, filename);
       } else {
         // Fetch and download the preview blob
         const response = await fetch(linkPreview);
         const blob = await response.blob();
-        downloadBlob(blob, 'invoice.docx');
+        downloadBlob(blob, filename);
       }
     } catch (error) {
       console.error('Form validation failed:', error);
@@ -151,12 +149,18 @@ export default function Home() {
       // Validate form first
       await form.validateFields();
       
+      // Generate filename with today's date and timestamp using dayjs
+      const now = dayjs();
+      const date = formattedDate(now, DATE_FORMAT.DATE_ONLY)
+      const timestamp = now.valueOf();
+      const filename = `Invoice-${date}-${timestamp}`;
+      
       // Fetch the current preview blob
       const response = await fetch(linkPreview);
       const blob = await response.blob();
       
       // Convert blob to File
-      const file = new File([blob], 'invoice.docx', { 
+      const file = new File([blob], `${filename}.docx`, { 
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
       });
       
@@ -165,8 +169,7 @@ export default function Home() {
       const pdfBlob = pdfResponse.data;
       
       // Download the PDF
-      const pdfFilename = file.name.replace('.docx', '.pdf');
-      downloadBlob(pdfBlob, pdfFilename);
+      downloadBlob(pdfBlob, `${filename}.pdf`);
     } catch (error) {
       if (error instanceof Error && error.name === 'ValidationError') {
         console.error('Form validation failed:', error);
