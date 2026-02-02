@@ -33,7 +33,10 @@ export default function Home() {
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const handleReloadInvoice = () => {
-    const newInvoiceNumber = generateRandomSuffix();
+    // Get current invoice date from form, fallback to today
+    const formData = form.getFieldsValue();
+    const invoiceDate = formData.invoiceDate ? formData.invoiceDate.toDate() : new Date();
+    const newInvoiceNumber = generateRandomSuffix(invoiceDate);
     setInvoiceNumber(newInvoiceNumber);
     form.setFieldValue('invoiceNumber', newInvoiceNumber);
   };
@@ -76,11 +79,11 @@ export default function Home() {
           onPreview(blobUrl: string) {
             setLinkPreview(blobUrl);
           },
-          onDownload: (blob: Blob) => {
-            const timestamp = Date.now();
-            const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
-            downloadBlob(blob, newFilename);
-          },
+          // onDownload: (blob: Blob) => {
+          //   const timestamp = Date.now();
+          //   const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
+          //   downloadBlob(blob, newFilename);
+          // },
         });
       };
 
