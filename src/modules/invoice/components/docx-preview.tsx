@@ -1,5 +1,5 @@
 import * as docx from 'docx-preview';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Props = {
     filePath: string;
@@ -7,6 +7,22 @@ type Props = {
 
 export default function DocxViewer({ filePath }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width < 768) {
+                setScale(width / 800); // Scale theo mobile
+            } else {
+                setScale(1);
+            }
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const renderDocx = async () => {
@@ -40,8 +56,21 @@ export default function DocxViewer({ filePath }: Props) {
     }, [filePath]);
 
     return (
-        <div style={{ height: '100%', overflow: 'auto' }}>
-            <div ref={containerRef} />
+        <div style={{ 
+            height: '100%', 
+            overflow: 'auto',
+            width: '100%'
+        }}>
+            <div 
+                style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    width: scale < 1 ? `${100 / scale}%` : '100%',
+                    height: scale < 1 ? `${100 / scale}%` : 'auto'
+                }}
+            >
+                <div ref={containerRef} />
+            </div>
         </div>
     );
 }

@@ -30,8 +30,8 @@ const getImageDimensions = (base64String: string): Promise<[number, number]> => 
     return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
-            const maxWidth = 250;
-            const maxHeight = 100;
+            const maxWidth = 150;
+            const maxHeight = 80;
             
             let width = img.width;
             let height = img.height;
@@ -51,7 +51,7 @@ const getImageDimensions = (base64String: string): Promise<[number, number]> => 
         };
         
         img.onerror = () => {
-            resolve([250, 100]); // fallback on error
+            resolve([150, 80]); // fallback on error
         };
         
         img.src = base64String;
@@ -119,7 +119,7 @@ export const generateDocument = async ({
                 }
                 
                 // Fallback to default size
-                return [250, 100];
+                return [150, 80];
             },
         });
 
