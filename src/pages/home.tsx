@@ -79,11 +79,11 @@ export default function Home() {
           onPreview(blobUrl: string) {
             setLinkPreview(blobUrl);
           },
-          onDownload: (blob: Blob) => {
-            const timestamp = Date.now();
-            const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
-            downloadBlob(blob, newFilename);
-          },
+          // onDownload: (blob: Blob) => {
+          //   const timestamp = Date.now();
+          //   const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
+          //   downloadBlob(blob, newFilename);
+          // },
         });
       };
 
