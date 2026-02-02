@@ -14,14 +14,14 @@ export default function AppLayout() {
         <>
             <ProLayout
                 title={'ANT Invoice'}
-                logo="/logo.png"
+                logo="logo.png"
                 route={routes}
                 location={location}
                 siderWidth={250}
                 layout="top"
+                                headerRender={false}
                 contentWidth="Fluid"
                 fixSiderbar
-                headerRender={false}
                 collapsed={collapsed}
                 onCollapse={setCollapsed}
                 contentStyle={{ padding: 0 }}
