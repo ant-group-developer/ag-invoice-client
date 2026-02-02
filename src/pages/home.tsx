@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber, Tabs, Select, Divider } from 'antd';
-import { PlusOutlined, FilePdfOutlined, FileWordOutlined,  } from '@ant-design/icons';
+import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber, Tabs, Select, Divider, Dropdown, Space } from 'antd';
+import { PlusOutlined, FilePdfOutlined, FileWordOutlined, DownOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import type { FormProps } from 'antd';
@@ -233,6 +233,15 @@ export default function Home() {
       invoiceNumber,
     });
   }, [form, invoiceNumber]);
+
+  const downloadMenuItems = [
+    {
+      key: 'word',
+      label: 'Download Word',
+      icon: <FileWordOutlined />,
+      onClick: handleDownloadWord,
+    },
+  ];
 
   // Update invoice number when invoice date changes
   const handleInvoiceDateChange = (date: any) => {
@@ -637,8 +646,12 @@ export default function Home() {
               <span>Document Preview</span>
               <div className='flex gap-2 flex-wrap' >
                 <Button size='small' icon={<div><Eye size={16}  /></div>} type="primary" onClick={() => handlePreview()}> Preview</Button>
-                <Button size='small' icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
-                <Button size='small' loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download PDF</Button>
+                <Space.Compact>
+                  <Button size='small' loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download PDF</Button>
+                  <Dropdown menu={{ items: downloadMenuItems }}>
+                    <Button type='primary' size='small' icon={<DownOutlined />} />
+                  </Dropdown>
+                </Space.Compact>
               </div>
           </div>
           } 
