@@ -30,8 +30,8 @@ const getImageDimensions = (base64String: string): Promise<[number, number]> => 
     return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
-            const maxWidth = 300;
-            const maxHeight = 150;
+            const maxWidth = 250;
+            const maxHeight = 100;
             
             let width = img.width;
             let height = img.height;
