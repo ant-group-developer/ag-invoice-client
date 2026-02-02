@@ -33,7 +33,10 @@ export default function Home() {
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const handleReloadInvoice = () => {
-    const newInvoiceNumber = generateRandomSuffix();
+    // Get current invoice date from form, fallback to today
+    const formData = form.getFieldsValue();
+    const invoiceDate = formData.invoiceDate ? formData.invoiceDate.toDate() : new Date();
+    const newInvoiceNumber = generateRandomSuffix(invoiceDate);
     setInvoiceNumber(newInvoiceNumber);
     form.setFieldValue('invoiceNumber', newInvoiceNumber);
   };
