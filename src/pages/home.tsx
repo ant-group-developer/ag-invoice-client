@@ -61,6 +61,7 @@ export default function Home() {
           invoiceDate,
           s: data?.s?.map((item: any) => ({
             ...item,
+            description: item.description?.trim(),
             amount: Number(item.amount || 0).toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
@@ -340,17 +341,16 @@ export default function Home() {
               <Row gutter={16} align="middle" style={{ 
               padding: '12px 12px',
               backgroundColor: '#fafafa',
-              margin: '0 0 12px'
-             
+              margin: '0 0 12px',
             }}>
-              <Col xs={24} sm={12} md={14}>
-                <span style={{ fontWeight: 600 }}>Description</span>
+              <Col xs={24} sm={10} md={16}>
+                <span style={{ fontWeight: 600}}>Description</span>
               </Col>
-              <Col xs={24} sm={8} md={6}>
-                <span style={{ fontWeight: 600, textAlign: 'center', display: 'block' }}>Amount</span>
+              <Col xs={24} sm={6} md={6}>
+                <span style={{ fontWeight: 600, textAlign: 'left', display: 'block',padding: '0 8px' }}>Amount</span>
               </Col>
-              <Col xs={24} sm={4} md={4}>
-                <span style={{ fontWeight: 600, textAlign: 'center', display: 'block' }}>Action</span>
+              <Col xs={24} sm={8} md={2}>
+                <span style={{ fontWeight: 600, textAlign: 'left', display: 'block',padding: '0 8px' }}></span>
               </Col>
             </Row>
             
@@ -359,8 +359,8 @@ export default function Home() {
                 <>
                   {fields.map(({ key, name, ...restField }) => (
                     <div key={key} >
-                      <Row gutter={16} align="middle">
-                        <Col xs={24} sm={12} md={14} >
+                      <Row gutter={16} align="middle" >
+                        <Col xs={24} sm={10} md={16} >
                           <AppFormItem
                             {...restField}
                             name={[name, 'description']}
@@ -376,7 +376,7 @@ export default function Home() {
                             }} placeholder="Enter description" style={{ width: '100%' }} />
                           </AppFormItem>
                         </Col>
-                        <Col xs={24} sm={8} md={6} >
+                        <Col xs={24} sm={6} md={6} >
                           <AppFormItem
                             {...restField}
                             name={[name, 'amount']}
@@ -396,7 +396,7 @@ export default function Home() {
                             />
                           </AppFormItem>
                         </Col>
-                        <Col xs={24} sm={4} md={4} className="text-center">
+                        <Col xs={24} sm={8} md={2} className="text-center">
                           <Button 
                             type="text" 
                             shape='circle'
