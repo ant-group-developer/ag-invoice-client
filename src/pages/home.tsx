@@ -76,6 +76,11 @@ export default function Home() {
           onPreview(blobUrl: string) {
             setLinkPreview(blobUrl);
           },
+          onDownload: (blob: Blob, _filename: string) => {
+            const timestamp = Date.now();
+            const newFilename = `${data.invoiceNumber || 'unknown'}-${timestamp}.docx`;
+            downloadBlob(blob, newFilename);
+          },
         });
       };
 
@@ -122,11 +127,11 @@ export default function Home() {
       // Validate form first
       await form.validateFields();
       
-      // Generate filename with today's date and timestamp using dayjs
-      const now = dayjs();
-      const date = formattedDate(now, DATE_FORMAT.DATE_ONLY)
-      const timestamp = now.valueOf();
-      const filename = `Invoice-${date}-${timestamp}.docx`;
+      // Get invoice number from form
+      const data = form.getFieldsValue();
+      const invoiceNumber = data.invoiceNumber || 'unknown';
+      const timestamp = Date.now();
+      const filename = `${invoiceNumber}-${timestamp}.docx`;
       
       if (linkPreview === "/preview/template.docx") {
         // Fetch and download the original template file
@@ -149,11 +154,11 @@ export default function Home() {
       // Validate form first
       await form.validateFields();
       
-      // Generate filename with today's date and timestamp using dayjs
-      const now = dayjs();
-      const date = formattedDate(now, DATE_FORMAT.DATE_ONLY)
-      const timestamp = now.valueOf();
-      const filename = `Invoice-${date}-${timestamp}`;
+      // Get invoice number from form
+      const data = form.getFieldsValue();
+      const invoiceNumber = data.invoiceNumber || 'unknown';
+      const timestamp = Date.now();
+      const filename = `${invoiceNumber}-${timestamp}`;
       
       // Fetch the current preview blob
       const response = await fetch(linkPreview);
