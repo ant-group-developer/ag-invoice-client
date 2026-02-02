@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber, Tabs } from 'antd';
-import { PlusOutlined, FileWordOutlined, FilePdfOutlined,  } from '@ant-design/icons';
+import { Form, Input, Card, Row, Col, Button, DatePicker, InputNumber, Tabs, Select } from 'antd';
+import { PlusOutlined, FilePdfOutlined,  } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import type { FormProps } from 'antd';
@@ -9,11 +9,12 @@ import AppFormItem from '../components/UI/antd-form/form-Item';
 import { generateDocument, downloadBlob } from '../modules/invoice/helpers';
 import { formattedDate} from '../common/helpers/date';
 import { DATE_FORMAT } from '../common/enums/common';
-import {  Eye, RotateCw, Trash } from 'lucide-react';
+import {  Eye, Trash } from 'lucide-react';
 import { COMPANY_ADDRESS, COMPANY_ID, COMPANY_NAME, TAX_ID } from '../modules/invoice/constants';
 import { useConvertWordToPdf } from '../modules/invoice/hooks/use-convert-word-to-pdf';
 import SignatureCanvas from 'react-signature-canvas';
 import ImageListUpload from '../components/UI/upload/image-list-upload';
+import TextArea from 'antd/es/input/TextArea';
 
 const generateRandomSuffix = (date?: Date) => {
   const targetDate = date || new Date();
@@ -32,14 +33,24 @@ export default function Home() {
   const { convertToPdf, isPending } = useConvertWordToPdf();
   const signatureRef = useRef<SignatureCanvas>(null);
 
-  const handleReloadInvoice = () => {
-    // Get current invoice date from form, fallback to today
-    const formData = form.getFieldsValue();
-    const invoiceDate = formData.invoiceDate ? formData.invoiceDate.toDate() : new Date();
-    const newInvoiceNumber = generateRandomSuffix(invoiceDate);
-    setInvoiceNumber(newInvoiceNumber);
-    form.setFieldValue('invoiceNumber', newInvoiceNumber);
-  };
+  const currencyOptions = [
+    { value: 'EUR', label: 'EUR (€)', locale: 'de-DE', symbol: '€' },
+    { value: 'USD', label: 'USD ($)', locale: 'en-US', symbol: '$' },
+    { value: 'GBP', label: 'GBP (£)', locale: 'en-GB', symbol: '£' },
+    { value: 'SGD', label: 'SGD (S$)', locale: 'en-SG', symbol: 'S$' },
+    { value: 'HKD', label: 'HKD (HK$)', locale: 'zh-HK', symbol: 'HK$' },
+    { value: 'CNY', label: 'CNY (¥)', locale: 'zh-CN', symbol: '¥' },
+    { value: 'VND', label: 'VND (₫)', locale: 'vi-VN', symbol: '₫' }
+  ]
+
+  // const handleReloadInvoice = () => {
+  //   // Get current invoice date from form, fallback to today
+  //   const formData = form.getFieldsValue();
+  //   const invoiceDate = formData.invoiceDate ? formData.invoiceDate.toDate() : new Date();
+  //   const newInvoiceNumber = generateRandomSuffix(invoiceDate);
+  //   setInvoiceNumber(newInvoiceNumber);
+  //   form.setFieldValue('invoiceNumber', newInvoiceNumber);
+  // };
 
 
   const onFinish: FormProps['onFinish'] = (values) => {
@@ -50,24 +61,32 @@ export default function Home() {
       const data = form.getFieldsValue();
       const invoiceDate = formattedDate(data.invoiceDate, DATE_FORMAT.DATE_ONLY);
       const total = data?.s?.reduce((acc: number, s: any) => acc + Number(s.amount || 0), 0);
+      // Get currency symbol
+      const selectedCurrency = currencyOptions.find(option => option.value === data.currency);
+      const symbolCurrency = selectedCurrency?.symbol || '';
       
        // Get signature data - prioritize uploaded image over canvas signature
       let signatureImage = '';
 
       const generateDocWithSignature = (signatureImage: string) => {
-        // Format amount fields with international number format
+        // Get locale from selected currency
+        const selectedCurrency = currencyOptions.find(option => option.value === data.currency);
+        const locale = selectedCurrency?.locale || 'en-US';
+        
+        // Format amount fields with currency-specific number format
         const formattedData = {
           ...data,
           invoiceDate,
+          symbolCurrency,
           s: data?.s?.map((item: any) => ({
             ...item,
             description: item.description?.trim(),
-            amount: Number(item.amount || 0).toLocaleString('en-US', {
+            amount: Number(item.amount || 0).toLocaleString(locale, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })
           })),
-          total: total.toLocaleString('en-US', {
+          total: total.toLocaleString(locale, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           }),
@@ -126,32 +145,32 @@ export default function Home() {
 
 
 
-  const handleDownloadWord = async () => {
-    try {
-      // Validate form first
-      await form.validateFields();
+  // const handleDownloadWord = async () => {
+  //   try {
+  //     // Validate form first
+  //     await form.validateFields();
       
-      // Get invoice number from form
-      const data = form.getFieldsValue();
-      const invoiceNumber = data.invoiceNumber || 'unknown';
-      const timestamp = Date.now();
-      const filename = `${invoiceNumber}-${timestamp}.docx`;
+  //     // Get invoice number from form
+  //     const data = form.getFieldsValue();
+  //     const invoiceNumber = data.invoiceNumber || 'unknown';
+  //     const timestamp = Date.now();
+  //     const filename = `${invoiceNumber}-${timestamp}.docx`;
       
-      if (linkPreview === "/preview/template.docx") {
-        // Fetch and download the original template file
-        const response = await fetch(linkPreview);
-        const blob = await response.blob();
-        downloadBlob(blob, filename);
-      } else {
-        // Fetch and download the preview blob
-        const response = await fetch(linkPreview);
-        const blob = await response.blob();
-        downloadBlob(blob, filename);
-      }
-    } catch (error) {
-      console.error('Form validation failed:', error);
-    }
-  };
+  //     if (linkPreview === "/preview/template.docx") {
+  //       // Fetch and download the original template file
+  //       const response = await fetch(linkPreview);
+  //       const blob = await response.blob();
+  //       downloadBlob(blob, filename);
+  //     } else {
+  //       // Fetch and download the preview blob
+  //       const response = await fetch(linkPreview);
+  //       const blob = await response.blob();
+  //       downloadBlob(blob, filename);
+  //     }
+  //   } catch (error) {
+  //     console.error('Form validation failed:', error);
+  //   }
+  // };
 
   const handleDownloadPdf = async () => {
     try {
@@ -160,9 +179,12 @@ export default function Home() {
       
       // Get invoice number from form
       const data = form.getFieldsValue();
-      const invoiceNumber = data.invoiceNumber || 'unknown';
-      const timestamp = Date.now();
-      const filename = `${invoiceNumber}-${timestamp}`;
+      // const invoiceNumber = data.invoiceNumber || 'unknown';
+      const partnerName = data.partnerName;
+      const billToName = data.billToName;
+
+      // const timestamp = Date.now();
+      const filename = `${partnerName} - ${billToName}`;
       
       // Fetch the current preview blob
       const response = await fetch(linkPreview);
@@ -209,7 +231,7 @@ export default function Home() {
     <div className='h-screen p-4'>
         {/* <Button type="primary" onClick={() => setLinkPreview("/preview/template.docx")}>Sample</Button> */}
       <Row gutter={16} className="h-[calc(100vh-2rem)] lg:h-[calc(100vh-2rem)]" >
-        <Col xs={24} lg={12} className="h-auto lg:h-full" style={{ overflowY: 'auto' }}>
+        <Col xs={24} lg={12} xl={12} className="h-auto lg:h-full" style={{ overflowY: 'auto' }}>
           <AppForm
             form={form}
             layout="horizontal"
@@ -226,120 +248,163 @@ export default function Home() {
             }}
           >
           {/* Invoice Information */}
-          <Card title="Invoice Information" style={{ marginBottom: '24px' }}>
-            <AppFormItem
-              label="Date"
-              name="invoiceDate"
-              required
-              rules={[{ required: true, message: 'Please select date!' }]}
-            >
-              <DatePicker style={{ width: '100%' }} onChange={handleInvoiceDateChange} />
-            </AppFormItem>
-            <AppFormItem
-              label="Invoice No."
-              name="invoiceNumber"
-              rules={[{ required: true, message: 'Please input invoice number!' }]}
-              required
-            >
-              <Input 
-                placeholder="Enter invoice number"
-                addonAfter={
-                  <Button 
-                    type="text" 
-                    icon={<RotateCw size={16} />} 
-                    onClick={handleReloadInvoice}
-                    title="Generate new invoice number"
-                    size='small'
-                  />
-                }
-              />
-            </AppFormItem>
+          <Card size='small' title="Invoice Information" style={{ marginBottom: '20px' }}>
+            <div className='grid grid-cols-1 md:grid-cols-12 gap-5'>
+              <AppFormItem
+              className='md:col-span-4'
+               label="Date"
+               name="invoiceDate"
+               layout='vertical'
+               required
+               wrapperCol={{ span: 24 }}
+               labelCol={{ span: 24 }}
+
+               rules={[{ required: true, message: 'Please select date!' }]}
+             >
+               <DatePicker style={{ width: '100%' }} onChange={handleInvoiceDateChange} />
+             </AppFormItem>
+             <AppFormItem
+               className='md:col-span-5'
+               label="Invoice No."
+               name="invoiceNumber"
+               layout='vertical'
+               labelCol={{span:24}}
+               wrapperCol={{ span: 24 }}
+               rules={[{ required: true, message: 'Please input invoice number!' }]}
+               required
+             >
+               <Input 
+                 readOnly
+                 value={invoiceNumber}
+                 placeholder="Invoice number will auto-generate"
+               />
+             </AppFormItem>
+             <AppFormItem
+              className='md:col-span-3'
+               label="Currency"
+               name="currency"
+               layout='vertical'
+               wrapperCol={{ span: 24 }}
+               labelCol={{span:24}}
+               rules={[{ required: true, message: 'Please input currency!' }]}
+               required
+             >
+               <Select
+                 placeholder="Select currency"
+                 options={currencyOptions}
+                 style={{ width: '100%' }}
+               />
+             </AppFormItem>
+            </div>
+              
           </Card>
 
-          {/* Partner information */}
-          <Card title="Partner information" style={{ marginBottom: '24px' }}>
-            <AppFormItem
-              label="Name"
-              name="partnerName"
-              required
-              rules={[{ required: true, message: 'Please input name!' }]}
-            >
-              <Input placeholder="Enter name" />
-            </AppFormItem>
-            <AppFormItem
-              label="Address"
-              name="partnerAddress"
-              required
-              rules={[{ required: true, message: 'Please input address!' }]}
-            >
-              <Input placeholder="Enter address" />
-            </AppFormItem>
-            <AppFormItem
-              label="Zip Code"
-              name="partnerZipCode"
-              required
-              rules={[{ required: true, message: 'Please input zip code!' }]}
-            >
-              <Input placeholder="Enter zip code" />
-            </AppFormItem>
-            <AppFormItem
-              label="Email"
-              name="partnerEmail"
-              required
-              rules={[
-                { required: true, message: 'Please input email!' },
-                { type: 'email', message: 'Please enter a valid email!' }
-              ]}
-            >
-              <Input placeholder="Enter email" />
-            </AppFormItem>
-          </Card>
+         <div className='grid grid-cols-1 lg:grid-cols-2 gap-5'>
+              {/* Partner information */}
+            <Card size='small' title="Partner information" style={{ marginBottom: '20px' }}>
+              <AppFormItem
+                label="Name"
+                wrapperCol={{ span: 24 }}
+                name="partnerName"
+                required
+                rules={[{ required: true, message: 'Please input name!' }]}
+              >
+                <Input placeholder="Enter name" />
+              </AppFormItem>
+              <AppFormItem
+                label="Address"
+                wrapperCol={{ span: 24 }}
+                name="partnerAddress"
+                required
+                rules={[{ required: true, message: 'Please input address!' }]}
+              >
+                <Input placeholder="Enter address" />
+              </AppFormItem>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Zip Code"
+                name="partnerZipCode"
+                required
+                rules={[{ required: true, message: 'Please input zip code!' }]}
+              >
+                <Input placeholder="Enter zip code" />
+              </AppFormItem>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Email"
+                name="partnerEmail"
+                required
+                rules={[
+                  { required: true, message: 'Please input email!' },
+                  { type: 'email', message: 'Please enter a valid email!' }
+                ]}
+              >
+                <Input placeholder="Enter email" />
+              </AppFormItem>
+            </Card>
 
 
-          {/* Bill to */}
-          <Card title="Bill to" style={{ marginBottom: '24px' }}>
-            <AppFormItem
-              label="Name"
-              name="billToName"
-              required
-              rules={[{ required: true, message: 'Please input name!' }]}
-            >
-              <Input placeholder="Enter name" />
-            </AppFormItem>
-            <AppFormItem
-              label="Company"
-              name="billToCompany"
-              required
-              rules={[{ required: true, message: 'Please input company!' }]}
-            >
-              <Input placeholder="Enter company" />
-            </AppFormItem>
-            <AppFormItem
-              label="Tax ID"
-              name="billToTaxId"
-              required
-              rules={[{ required: true, message: 'Please input tax ID!' }]}
-            >
-              <Input placeholder="Enter tax ID" />
-            </AppFormItem>
-            <AppFormItem
-              label="Address"
-              name="billToAddress"
-              required
-              rules={[{ required: true, message: 'Please input address!' }]}
-            >
-              <Input placeholder="Enter address" />
-            </AppFormItem>
-          </Card>
+            {/* Bill to */}
+            <Card size='small' title="Bill to" style={{ marginBottom: '20px' }}>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Name"
+                name="billToName"
+                required
+                rules={[{ required: true, message: 'Please input name!' }]}
+              >
+                <Input placeholder="Enter name" />
+              </AppFormItem>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Company"
+                name="billToCompany"
+                required
+                rules={[{ required: true, message: 'Please input company!' }]}
+              >
+                <Input placeholder="Enter company" />
+              </AppFormItem>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Tax ID"
+                name="billToTaxId"
+                required
+                rules={[{ required: true, message: 'Please input tax ID!' }]}
+              >
+                <Input placeholder="Enter tax ID" />
+              </AppFormItem>
+              <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="Address"
+                name="billToAddress"
+                required
+                rules={[{ required: true, message: 'Please input address!' }]}
+              >
+                <TextArea autoSize={{
+                  minRows:1,
+                  maxRows:5
+                }} placeholder="Enter address" />
+              </AppFormItem>
+               <AppFormItem
+                wrapperCol={{ span: 24 }}
+                label="PO"
+                name="po"
+                required
+                rules={[{ required: true, message: 'Please input PO!' }]}
+              >
+                <Input placeholder="Enter PO" />
+              </AppFormItem>
+            </Card>
+         </div>
 
     
 
           {/* Payment Content */}
-          <Card title="Payment Details" style={{ marginBottom: '24px' }}>
+          <Card size='small' title="Payment Details" style={{ marginBottom: '20px' }}>
             {/* Header */}
             <div className='border rounded-md p-4 border-zinc-200'>
               <Row gutter={16} align="middle" style={{ 
-              padding: '12px 12px',
+              padding: '8px 0',
               backgroundColor: '#fafafa',
               margin: '0 0 12px',
             }}>
@@ -359,7 +424,7 @@ export default function Home() {
                 <>
                   {fields.map(({ key, name, ...restField }) => (
                     <div key={key} >
-                      <Row gutter={16} align="middle" >
+                      <Row gutter={16} align="top" >
                         <Col xs={24} sm={10} md={16} >
                           <AppFormItem
                             {...restField}
@@ -398,8 +463,8 @@ export default function Home() {
                         </Col>
                         <Col xs={24} sm={8} md={2} className="text-center">
                           <Button 
-                            type="text" 
-                            shape='circle'
+                            type="default" 
+                            shape='default'
                             danger 
                             icon={<Trash size={16} />} 
                             onClick={() => remove(name)}
@@ -426,8 +491,11 @@ export default function Home() {
             </div>
           </Card>
 
-          <Card title="Payment information" style={{ marginBottom: '24px' }}>
+          <Row gutter={16} >
+            <Col xs={24} sm={24} md={24} lg={14} span={14}>
+              <Card size='small' title="Payment information" style={{ marginBottom: '20px' }}>
             <AppFormItem
+            
               label="Account name"
               name="accountName"
               required
@@ -444,7 +512,7 @@ export default function Home() {
               <Input placeholder="Enter bank name" />
             </AppFormItem>
             <AppFormItem
-              label="Account number Bank"
+              label="Account number"
               name="accountNumber"
               // required
               // rules={[{ required: true, message: 'Please input account number!' }]}
@@ -452,7 +520,7 @@ export default function Home() {
               <Input placeholder="Enter account number" />
             </AppFormItem>
             <AppFormItem
-              label="SWIFT code Bank"
+              label="SWIFT code"
               name="swiftCode"
               // required
               // rules={[{ required: true, message: 'Please input SWIFT code!' }]}
@@ -464,12 +532,17 @@ export default function Home() {
               name="bankAddress"
               
             >
-              <Input placeholder="Enter address" />
+              <TextArea autoSize={{
+                minRows:1,
+                maxRows:5
+              }} placeholder="Enter address" />
             </AppFormItem>
           </Card>
+            </Col>
 
           {/* Digital Signature */}
-          <Card title="Digital Signature" style={{ marginBottom: '24px' }}>
+              <Col xs={24} sm={24} md={24} lg={10} span={10}>
+                <Card size='small' title="Digital Signature" style={{ marginBottom: '20px', height: '94%' }}>
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}
@@ -479,20 +552,31 @@ export default function Home() {
                   label: 'Draw Signature',
                   children: (
                     <AppFormItem
-                      label="Draw Your Signature"
+                      label=""
                       name="signatureCanvas"
+                      labelCol={{
+                        span:24
+                      }}
+                      wrapperCol={{
+                        span:24
+                      }}
                     >
                       <div>
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          penColor="black"
-                          canvasProps={{
-                            width: window.innerWidth < 768 ? window.innerWidth - 80 : 400,
-                            height: 150,
-                            className: 'signature-canvas',
-                            style: { border: '1px dashed #ccc', width: '100%', maxWidth: '400px' }
-                          }}
-                        />
+                        {(() => {
+                          const canvasWidth = window.innerWidth < 768 ? window.innerWidth - 80 : 400;
+                          return (
+                            <SignatureCanvas
+                              ref={signatureRef}
+                              penColor="black"
+                              canvasProps={{
+                                width: canvasWidth,
+                                height: 150,
+                                className: 'signature-canvas',
+                                style: { border: '1px dashed #ccc', width: `${canvasWidth}px` }
+                              }}
+                            />
+                          );
+                        })()}
                         <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
                           <Button onClick={clearSignature}>Clear</Button>
                           <Button type="primary" onClick={saveSignature}>Save Signature</Button>
@@ -506,7 +590,7 @@ export default function Home() {
                   label: 'Upload Signature',
                   children: (
                     <AppFormItem  
-                      label="Upload Signature"
+                      label=""
                       name="signatureUpload">
                         <ImageListUpload maxCount={1} />
                     </AppFormItem>
@@ -515,17 +599,19 @@ export default function Home() {
               ]}
             />
           </Card>
+              </Col>
+          </Row>
         </AppForm>
         </Col>
         
-        <Col xs={24} lg={12} className="h-auto lg:h-full" style={{ overflow: 'hidden' }}>
-          <Card  title={
+        <Col xs={24} lg={12} xl={12} className="h-auto lg:h-full" style={{ overflow: 'hidden' }}>
+          <Card size='small'  title={
             <div className='flex justify-between flex-wrap gap-2 py-2'>
               <span>Document Preview</span>
               <div className='flex gap-2 flex-wrap' >
-                <Button icon={<div><Eye size={16}  /></div>} type="primary" onClick={() => handlePreview()}> Preview</Button>
-                <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button>
-                <Button loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download PDF</Button>
+                <Button size='small' icon={<div><Eye size={16}  /></div>} type="primary" onClick={() => handlePreview()}> Preview</Button>
+                {/* <Button icon={<FileWordOutlined />} type="primary" onClick={handleDownloadWord}>Download Word</Button> */}
+                <Button size='small' loading={isPending} icon={<FilePdfOutlined />} type="primary" onClick={handleDownloadPdf}>Download PDF</Button>
               </div>
           </div>
           } 
