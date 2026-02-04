@@ -901,7 +901,7 @@ export default function Home() {
                                             items={[
                                                 {
                                                     key: 'draw',
-                                                    label: 'Draw Signature 1',
+                                                    label: 'Draw Signature',
                                                     children: (
                                                         <AppFormItem
                                                             label=""
@@ -922,13 +922,8 @@ export default function Home() {
                                                                         height: '150px',
                                                                         overflow: 'hidden',
                                                                         position: 'relative',
-                                                                        touchAction: 'none',
-                                                                        userSelect: 'none',
-                                                                        WebkitUserSelect: 'none',
-                                                                        WebkitTouchCallout: 'none',
+                                                                     
                                                                     }}
-                                                                    onTouchStart={(e) => e.preventDefault()}
-                                                                    onTouchMove={(e) => e.preventDefault()}
                                                                 >
                                                                 <SignatureCanvas
                                                                     ref={
@@ -941,9 +936,9 @@ export default function Home() {
                                                                         style: {
                                                                             width: '100%',
                                                                             height: '150px',
-                                                                            touchAction: 'none',
                                                                         },
                                                                     }}
+                                                                    clearOnResize={false}
                                                                 />
                                                                 </div>
                                                                 <div
