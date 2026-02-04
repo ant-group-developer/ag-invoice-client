@@ -290,30 +290,6 @@ export default function Home() {
         });
     }, [form, invoiceNumber]);
 
-    useEffect(() => {
-        let scrollTimer: NodeJS.Timeout;
-        
-        const handleScroll = () => {
-            if (signatureRef.current && !signatureRef.current.isEmpty()) {
-                const signatureData = signatureRef.current.toDataURL();
-                form.setFieldValue('signatureCanvas', signatureData);
-            }
-        };
-
-        const handleTouchEnd = () => {
-            scrollTimer = setTimeout(handleScroll, 100);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        window.addEventListener('touchend', handleTouchEnd);
-        
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('touchend', handleTouchEnd);
-            if (scrollTimer) clearTimeout(scrollTimer);
-        };
-    }, [form]);
-
 
     const downloadMenuItems = [
         {
@@ -947,23 +923,28 @@ export default function Home() {
                                                                         overflow: 'hidden',
                                                                         position: 'relative',
                                                                         touchAction: 'none',
+                                                                        userSelect: 'none',
+                                                                        WebkitUserSelect: 'none',
+                                                                        WebkitTouchCallout: 'none',
                                                                     }}
+                                                                    onTouchStart={(e) => e.preventDefault()}
+                                                                    onTouchMove={(e) => e.preventDefault()}
                                                                 >
-                                                                    <SignatureCanvas
-                                                                        ref={
-                                                                            signatureRef
-                                                                        }
-                                                                        penColor="black"
-                                                                        canvasProps={{
-                                                                            className:
-                                                                                'signature-canvas',
-                                                                            style: {
-                                                                                width: '100%',
-                                                                                height: '150px',
-                                                                                touchAction: 'none',
-                                                                            },
-                                                                        }}
-                                                                    />
+                                                                <SignatureCanvas
+                                                                    ref={
+                                                                        signatureRef
+                                                                    }
+                                                                    penColor="black"
+                                                                    canvasProps={{
+                                                                        className:
+                                                                            'signature-canvas',
+                                                                        style: {
+                                                                            width: '100%',
+                                                                            height: '150px',
+                                                                            touchAction: 'none',
+                                                                        },
+                                                                    }}
+                                                                />
                                                                 </div>
                                                                 <div
                                                                     style={{
