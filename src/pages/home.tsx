@@ -131,7 +131,7 @@ export default function Home() {
                     .filter((line) => line.trim().length > 0);
                 return lines.join('\n');
             };
-
+            const isHasPoValue = !!data?.po && data?.po?.length > 0;
             // Format amount fields with currency-specific number format
             const formattedData = {
                 ...data,
@@ -153,6 +153,7 @@ export default function Home() {
                     maximumFractionDigits: 2,
                 }),
                 signatureImage,
+                poHeader: isHasPoValue ? 'PO' : undefined
             };
 
             generateDocument({
