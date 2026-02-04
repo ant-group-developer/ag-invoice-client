@@ -81,12 +81,12 @@ export default function Home() {
             : new Date();
         const newInvoiceNumber = generateRandomSuffix(invoiceDate);
         setInvoiceNumber(newInvoiceNumber);
-        
+
         // Force update form and trigger preview
-        form.setFieldsValue({ 
-            invoiceNumber: newInvoiceNumber
+        form.setFieldsValue({
+            invoiceNumber: newInvoiceNumber,
         });
-        
+
         // Also manually trigger preview as fallback
         setTimeout(() => handlePreview(), 0);
     };
@@ -290,6 +290,22 @@ export default function Home() {
         });
     }, [form, invoiceNumber]);
 
+    useEffect(() => {
+        const canvas = signatureRef.current?.getCanvas();
+        if (canvas) {
+            const preventTouchScroll = (e: TouchEvent) => {
+                e.preventDefault();
+            };
+            canvas.addEventListener('touchstart', preventTouchScroll, { passive: false });
+            canvas.addEventListener('touchmove', preventTouchScroll, { passive: false });
+            
+            return () => {
+                canvas.removeEventListener('touchstart', preventTouchScroll);
+                canvas.removeEventListener('touchmove', preventTouchScroll);
+            };
+        }
+    }, []);
+
     const downloadMenuItems = [
         {
             key: 'word',
@@ -339,7 +355,12 @@ export default function Home() {
                                 billToCompany: COMPANY_ID,
                                 invoiceDate: dayjs(),
                                 currency: 'USD',
-                                s: [{ description: '', amount: 0 }],
+                                s: [
+                                    {
+                                        description: 'Revenue Youtube MM/YYYY',
+                                        amount: 0,
+                                    },
+                                ],
                             }}
                             onValuesChange={() => handlePreview()}
                         >
@@ -922,6 +943,7 @@ export default function Home() {
                                                                             maxWidth:
                                                                                 '100%',
                                                                             height: '150px',
+                                                                            touchAction: 'none',
                                                                         },
                                                                     }}
                                                                 />
