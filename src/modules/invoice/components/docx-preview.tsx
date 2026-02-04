@@ -18,55 +18,86 @@ export default function DocxViewer({ filePath }: Props) {
                 setScale(1);
             }
         };
-        
+
         handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // useEffect(() => {
+    //     const renderDocx = async () => {
+    //         try {
+    //             const response = await fetch(filePath);
+    //             const template = await response.arrayBuffer();
+    //             if (containerRef.current) {
+    //                 const el = containerRef.current as HTMLElement;
+    //                 await docx.renderAsync(template, el);
+    //             }
+    //         } catch (error) {
+    //             console.error('Error rendering DOCX:', error);
+    //         }
+    //     };
+
+    //     if (filePath) {
+    //         renderDocx();
+    //     } else {
+    //         if (containerRef.current) {
+    //             containerRef.current.innerHTML = '';
+    //         }
+    //     }
+
+    //     return () => {
+    //         if (containerRef.current) {
+    //             containerRef.current.innerHTML = '';
+    //         }
+    //     };
+    // }, [filePath]);
+
     useEffect(() => {
+        let cancelled = false;
+
         const renderDocx = async () => {
             try {
                 const response = await fetch(filePath);
                 const template = await response.arrayBuffer();
-                if (containerRef.current) {
-                    const el = containerRef.current as HTMLElement;
-                    await docx.renderAsync(template, el);
-                }
-            } catch (error) {
-                // Handle any potential errors during rendering
-                console.error('Error rendering DOCX:', error);
+
+                if (!containerRef.current || cancelled) return;
+
+                // render vào temp node (không đụng UI hiện tại)
+                const temp = document.createElement('div');
+                await docx.renderAsync(template, temp);
+
+                if (cancelled || !containerRef.current) return;
+
+                // swap: thay nội dung 1 phát sau khi đã render xong
+                containerRef.current.innerHTML = '';
+                containerRef.current.appendChild(temp);
+            } catch (e) {
+                console.error('Error rendering DOCX:', e);
             }
         };
 
-        if (filePath) {
-            renderDocx();
-        } else {
-            if (containerRef.current) {
-                containerRef.current.innerHTML = '';
-            }
-        }
+        if (filePath) renderDocx();
 
         return () => {
-            // Clear the rendered content from the container when unmounting
-            if (containerRef.current) {
-                containerRef.current.innerHTML = '';
-            }
+            cancelled = true; // tránh race khi đổi file nhanh
         };
     }, [filePath]);
 
     return (
-        <div style={{ 
-            height: '100%', 
-            overflow: 'auto',
-            width: '100%'
-        }}>
-            <div 
+        <div
+            style={{
+                height: '100%',
+                overflow: 'auto',
+                width: '100%',
+            }}
+        >
+            <div
                 style={{
                     transform: `scale(${scale})`,
                     transformOrigin: 'top left',
                     width: scale < 1 ? `${100 / scale}%` : '100%',
-                    height: scale < 1 ? `${100 / scale}%` : 'auto'
+                    height: scale < 1 ? `${100 / scale}%` : 'auto',
                 }}
             >
                 <div ref={containerRef} />

@@ -81,7 +81,14 @@ export default function Home() {
             : new Date();
         const newInvoiceNumber = generateRandomSuffix(invoiceDate);
         setInvoiceNumber(newInvoiceNumber);
-        form.setFieldValue('invoiceNumber', newInvoiceNumber);
+        
+        // Force update form and trigger preview
+        form.setFieldsValue({ 
+            invoiceNumber: newInvoiceNumber
+        });
+        
+        // Also manually trigger preview as fallback
+        setTimeout(() => handlePreview(), 0);
     };
 
     const onFinish: FormProps['onFinish'] = (values) => {
@@ -298,7 +305,8 @@ export default function Home() {
             const selectedDate = date.toDate(); // Convert dayjs to Date
             const newInvoiceNumber = generateRandomSuffix(selectedDate);
             setInvoiceNumber(newInvoiceNumber);
-            form.setFieldValue('invoiceNumber', newInvoiceNumber);
+            form.setFieldsValue({ invoiceNumber: newInvoiceNumber });
+            setTimeout(() => handlePreview(), 0);
         }
     };
 
@@ -333,6 +341,7 @@ export default function Home() {
                                 currency: 'USD',
                                 s: [{ description: '', amount: 0 }],
                             }}
+                            onValuesChange={() => handlePreview()}
                         >
                             {/* Invoice Information */}
                             <Card
@@ -390,8 +399,12 @@ export default function Home() {
                                                     <Button
                                                         type="text"
                                                         size="small"
-                                                        icon={<ReloadOutlined />}
-                                                        onClick={handleReloadInvoice}
+                                                        icon={
+                                                            <ReloadOutlined />
+                                                        }
+                                                        onClick={
+                                                            handleReloadInvoice
+                                                        }
                                                         title="Random last 3 digits"
                                                     />
                                                 }
