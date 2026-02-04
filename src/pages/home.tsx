@@ -81,12 +81,12 @@ export default function Home() {
             : new Date();
         const newInvoiceNumber = generateRandomSuffix(invoiceDate);
         setInvoiceNumber(newInvoiceNumber);
-        
+
         // Force update form and trigger preview
-        form.setFieldsValue({ 
-            invoiceNumber: newInvoiceNumber
+        form.setFieldsValue({
+            invoiceNumber: newInvoiceNumber,
         });
-        
+
         // Also manually trigger preview as fallback
         setTimeout(() => handlePreview(), 0);
     };
@@ -131,7 +131,7 @@ export default function Home() {
                     .filter((line) => line.trim().length > 0);
                 return lines.join('\n');
             };
-
+            const isHasPoValue = !!data?.po && data?.po?.length > 0;
             // Format amount fields with currency-specific number format
             const formattedData = {
                 ...data,
@@ -153,6 +153,7 @@ export default function Home() {
                     maximumFractionDigits: 2,
                 }),
                 signatureImage,
+                poHeader: isHasPoValue ? 'PO' : undefined
             };
 
             generateDocument({
@@ -290,6 +291,7 @@ export default function Home() {
         });
     }, [form, invoiceNumber]);
 
+
     const downloadMenuItems = [
         {
             key: 'word',
@@ -339,7 +341,12 @@ export default function Home() {
                                 billToCompany: COMPANY_ID,
                                 invoiceDate: dayjs(),
                                 currency: 'USD',
-                                s: [{ description: '', amount: 0 }],
+                                s: [
+                                    {
+                                        description: 'Revenue Youtube MM/YYYY',
+                                        amount: 0,
+                                    },
+                                ],
                             }}
                             onValuesChange={() => handlePreview()}
                         >
@@ -908,6 +915,17 @@ export default function Home() {
                                                             }}
                                                         >
                                                             <div>
+                                                                <div
+                                                                    style={{
+                                                                        border: '1px dashed #ccc',
+                                                                        width: '100%',
+                                                                        maxWidth: '100%',
+                                                                        height: '150px',
+                                                                        overflow: 'hidden',
+                                                                        position: 'relative',
+                                                                     
+                                                                    }}
+                                                                >
                                                                 <SignatureCanvas
                                                                     ref={
                                                                         signatureRef
@@ -917,14 +935,13 @@ export default function Home() {
                                                                         className:
                                                                             'signature-canvas',
                                                                         style: {
-                                                                            border: '1px dashed #ccc',
                                                                             width: '100%',
-                                                                            maxWidth:
-                                                                                '100%',
                                                                             height: '150px',
                                                                         },
                                                                     }}
+                                                                    clearOnResize={false}
                                                                 />
+                                                                </div>
                                                                 <div
                                                                     style={{
                                                                         marginTop:
