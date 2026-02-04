@@ -916,7 +916,7 @@ export default function Home() {
                                             items={[
                                                 {
                                                     key: 'draw',
-                                                    label: 'Draw Signature',
+                                                    label: 'Draw Signature 1',
                                                     children: (
                                                         <AppFormItem
                                                             label=""
