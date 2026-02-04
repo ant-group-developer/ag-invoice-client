@@ -291,20 +291,29 @@ export default function Home() {
     }, [form, invoiceNumber]);
 
     useEffect(() => {
-        const canvas = signatureRef.current?.getCanvas();
-        if (canvas) {
-            const preventTouchScroll = (e: TouchEvent) => {
-                e.preventDefault();
-            };
-            canvas.addEventListener('touchstart', preventTouchScroll, { passive: false });
-            canvas.addEventListener('touchmove', preventTouchScroll, { passive: false });
-            
-            return () => {
-                canvas.removeEventListener('touchstart', preventTouchScroll);
-                canvas.removeEventListener('touchmove', preventTouchScroll);
-            };
-        }
-    }, []);
+        let scrollTimer: NodeJS.Timeout;
+        
+        const handleScroll = () => {
+            if (signatureRef.current && !signatureRef.current.isEmpty()) {
+                const signatureData = signatureRef.current.toDataURL();
+                form.setFieldValue('signatureCanvas', signatureData);
+            }
+        };
+
+        const handleTouchEnd = () => {
+            scrollTimer = setTimeout(handleScroll, 100);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('touchend', handleTouchEnd);
+        
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('touchend', handleTouchEnd);
+            if (scrollTimer) clearTimeout(scrollTimer);
+        };
+    }, [form]);
+
 
     const downloadMenuItems = [
         {
@@ -929,24 +938,33 @@ export default function Home() {
                                                             }}
                                                         >
                                                             <div>
-                                                                <SignatureCanvas
-                                                                    ref={
-                                                                        signatureRef
-                                                                    }
-                                                                    penColor="black"
-                                                                    canvasProps={{
-                                                                        className:
-                                                                            'signature-canvas',
-                                                                        style: {
-                                                                            border: '1px dashed #ccc',
-                                                                            width: '100%',
-                                                                            maxWidth:
-                                                                                '100%',
-                                                                            height: '150px',
-                                                                            touchAction: 'none',
-                                                                        },
+                                                                <div
+                                                                    style={{
+                                                                        border: '1px dashed #ccc',
+                                                                        width: '100%',
+                                                                        maxWidth: '100%',
+                                                                        height: '150px',
+                                                                        overflow: 'hidden',
+                                                                        position: 'relative',
+                                                                        touchAction: 'none',
                                                                     }}
-                                                                />
+                                                                >
+                                                                    <SignatureCanvas
+                                                                        ref={
+                                                                            signatureRef
+                                                                        }
+                                                                        penColor="black"
+                                                                        canvasProps={{
+                                                                            className:
+                                                                                'signature-canvas',
+                                                                            style: {
+                                                                                width: '100%',
+                                                                                height: '150px',
+                                                                                touchAction: 'none',
+                                                                            },
+                                                                        }}
+                                                                    />
+                                                                </div>
                                                                 <div
                                                                     style={{
                                                                         marginTop:
