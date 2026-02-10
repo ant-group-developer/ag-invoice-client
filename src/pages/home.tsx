@@ -153,7 +153,7 @@ export default function Home() {
                     maximumFractionDigits: 2,
                 }),
                 signatureImage,
-                poHeader: isHasPoValue ? 'PO' : undefined
+                poHeader: isHasPoValue ? 'PO' : undefined,
             };
 
             generateDocument({
@@ -219,8 +219,32 @@ export default function Home() {
             // Validate form first
             await form.validateFields();
 
-            // Get invoice number from form
+            // Custom validation for SWIFT/Routing number
             const data = form.getFieldsValue();
+            const hasSwift = data.swiftCode && data.swiftCode.trim().length > 0;
+            const hasRouting = data.routingNumber;
+
+            if (!hasSwift && !hasRouting) {
+                form.setFields([
+                    {
+                        name: 'swiftCode',
+                        errors: ['Phải có SWIFT code hoặc Routing number'],
+                    },
+                    {
+                        name: 'routingNumber',
+                        errors: ['Phải có SWIFT code hoặc Routing number'],
+                    },
+                ]);
+                return;
+            }
+
+            // Clear custom errors if validation passes
+            form.setFields([
+                { name: 'swiftCode', errors: [] },
+                { name: 'routingNumber', errors: [] },
+            ]);
+
+            // Get invoice number from form
             // const invoiceNumber = data.invoiceNumber || 'unknown';
             // const timestamp = Date.now();
             // const filename = `${invoiceNumber}-${timestamp}.docx`;
@@ -252,8 +276,32 @@ export default function Home() {
             // Validate form first
             await form.validateFields();
 
-            // Get invoice number from form
+            // Custom validation for SWIFT/Routing number
             const data = form.getFieldsValue();
+            const hasSwift = data.swiftCode && data.swiftCode.trim().length > 0;
+            const hasRouting = data.routingNumber;
+
+            if (!hasSwift && !hasRouting) {
+                form.setFields([
+                    {
+                        name: 'swiftCode',
+                        errors: ['Must have SWIFT code or Routing number'],
+                    },
+                    {
+                        name: 'routingNumber',
+                        errors: ['Must have SWIFT code or Routing number'],
+                    },
+                ]);
+                return;
+            }
+
+            // Clear custom errors if validation passes
+            form.setFields([
+                { name: 'swiftCode', errors: [] },
+                { name: 'routingNumber', errors: [] },
+            ]);
+
+            // Get invoice number from form
             // const invoiceNumber = data.invoiceNumber || 'unknown';
             const partnerName = data.partnerName;
             const billToName = data.billToName;
@@ -290,7 +338,6 @@ export default function Home() {
             invoiceNumber,
         });
     }, [form, invoiceNumber]);
-
 
     const downloadMenuItems = [
         {
@@ -340,6 +387,7 @@ export default function Home() {
                                 billToTaxId: TAX_ID,
                                 billToCompany: COMPANY_ID,
                                 invoiceDate: dayjs(),
+                                accountType: 'Checking',
                                 currency: 'USD',
                                 s: [
                                     {
@@ -870,10 +918,43 @@ export default function Home() {
                                         <AppFormItem
                                             label="SWIFT code"
                                             name="swiftCode"
-                                            // required
-                                            // rules={[{ required: true, message: 'Please input SWIFT code!' }]}
                                         >
                                             <Input placeholder="Enter SWIFT code" />
+                                        </AppFormItem>
+                                        <AppFormItem
+                                            label="Routing number"
+                                            name="routingNumber"
+                                        >
+                                            <InputNumber
+                                                style={{
+                                                    width: '100%',
+                                                }}
+                                                placeholder="Enter routing number"
+                                            />
+                                        </AppFormItem>
+                                        <AppFormItem
+                                            label="Account type"
+                                            name="accountType"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message:
+                                                        'Please select account type!',
+                                                },
+                                            ]}
+                                        >
+                                            <Select
+                                                options={[
+                                                    {
+                                                        label: 'Checking',
+                                                        value: 'Checking',
+                                                    },
+                                                    {
+                                                        label: 'Saving',
+                                                        value: 'Saving',
+                                                    },
+                                                ]}
+                                            />
                                         </AppFormItem>
                                         <AppFormItem
                                             label="Address"
@@ -892,10 +973,7 @@ export default function Home() {
 
                                 {/* Digital Signature */}
                                 <Col xs={24} sm={24} md={24} lg={10} span={10}>
-                                    <Card
-                                        size="small"
-                                        title="Digital Signature"
-                                    >
+                                    <Card size="small" title="Signature">
                                         <Tabs
                                             activeKey={activeTab}
                                             onChange={setActiveTab}
@@ -904,86 +982,136 @@ export default function Home() {
                                                     key: 'draw',
                                                     label: 'Draw Signature',
                                                     children: (
-                                                        <AppFormItem
-                                                            label=""
-                                                            name="signatureCanvas"
-                                                            labelCol={{
-                                                                span: 24,
-                                                            }}
-                                                            wrapperCol={{
-                                                                span: 24,
-                                                            }}
-                                                        >
-                                                            <div>
-                                                                <div
-                                                                    style={{
-                                                                        border: '1px dashed #ccc',
-                                                                        width: '100%',
-                                                                        maxWidth: '100%',
-                                                                        height: '150px',
-                                                                        overflow: 'hidden',
-                                                                        position: 'relative',
-                                                                     
-                                                                    }}
-                                                                >
-                                                                <SignatureCanvas
-                                                                    ref={
-                                                                        signatureRef
-                                                                    }
-                                                                    penColor="black"
-                                                                    canvasProps={{
-                                                                        className:
-                                                                            'signature-canvas',
-                                                                        style: {
+                                                        <>
+                                                            <AppFormItem
+                                                                label="Full name"
+                                                                name="fullname"
+                                                                layout="vertical"
+                                                                labelCol={{
+                                                                    span: 24,
+                                                                }}
+                                                                wrapperCol={{
+                                                                    span: 24,
+                                                                }}
+                                                                required
+                                                                rules={[
+                                                                    {
+                                                                        required: true,
+                                                                        message:
+                                                                            'Please input your full name!',
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <Input />
+                                                            </AppFormItem>
+                                                            <AppFormItem
+                                                                label=""
+                                                                name="signatureCanvas"
+                                                                labelCol={{
+                                                                    span: 24,
+                                                                }}
+                                                                wrapperCol={{
+                                                                    span: 24,
+                                                                }}
+                                                            >
+                                                                <div>
+                                                                    <div
+                                                                        style={{
+                                                                            border: '1px dashed #ccc',
                                                                             width: '100%',
+                                                                            maxWidth:
+                                                                                '100%',
                                                                             height: '150px',
-                                                                        },
-                                                                    }}
-                                                                    clearOnResize={false}
-                                                                />
-                                                                </div>
-                                                                <div
-                                                                    style={{
-                                                                        marginTop:
-                                                                            '8px',
-                                                                        display:
-                                                                            'flex',
-                                                                        gap: '8px',
-                                                                    }}
-                                                                >
-                                                                    <Button
-                                                                        onClick={
-                                                                            clearSignature
-                                                                        }
+                                                                            overflow:
+                                                                                'hidden',
+                                                                            position:
+                                                                                'relative',
+                                                                        }}
                                                                     >
-                                                                        Clear
-                                                                    </Button>
-                                                                    <Button
-                                                                        type="primary"
-                                                                        onClick={
-                                                                            saveSignature
-                                                                        }
+                                                                        <SignatureCanvas
+                                                                            ref={
+                                                                                signatureRef
+                                                                            }
+                                                                            penColor="black"
+                                                                            canvasProps={{
+                                                                                className:
+                                                                                    'signature-canvas',
+                                                                                style: {
+                                                                                    width: '100%',
+                                                                                    height: '150px',
+                                                                                },
+                                                                            }}
+                                                                            clearOnResize={
+                                                                                false
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                    <div
+                                                                        style={{
+                                                                            marginTop:
+                                                                                '8px',
+                                                                            display:
+                                                                                'flex',
+                                                                            gap: '8px',
+                                                                        }}
                                                                     >
-                                                                        Save
-                                                                        Signature
-                                                                    </Button>
+                                                                        <Button
+                                                                            onClick={
+                                                                                clearSignature
+                                                                            }
+                                                                        >
+                                                                            Clear
+                                                                        </Button>
+                                                                        <Button
+                                                                            type="primary"
+                                                                            onClick={
+                                                                                saveSignature
+                                                                            }
+                                                                        >
+                                                                            Save
+                                                                            Signature
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </AppFormItem>
+                                                            </AppFormItem>
+                                                        </>
                                                     ),
                                                 },
                                                 {
                                                     key: 'upload',
                                                     label: 'Upload Signature',
                                                     children: (
-                                                        <AppFormItem
-                                                            label=""
-                                                            name="signatureUpload"
-                                                        >
-                                                            <ImageListUpload
-                                                                maxCount={1}
-                                                            />
-                                                        </AppFormItem>
+                                                        <>
+                                                            <AppFormItem
+                                                                name="fullname"
+                                                                label="Full name"
+                                                                layout="vertical"
+                                                                labelCol={{
+                                                                    span: 24,
+                                                                }}
+                                                                wrapperCol={{
+                                                                    span: 24,
+                                                                }}
+                                                                required
+                                                                rules={[
+                                                                    {
+                                                                        required: true,
+                                                                        message:
+                                                                            'Please input your full name!',
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <Input />
+                                                            </AppFormItem>
+                                                            <AppFormItem
+                                                                label=""
+                                                                name="signatureUpload"
+                                                            >
+                                                                <ImageListUpload
+                                                                    maxCount={1}
+                                                                />
+                                                            </AppFormItem>
+                                                        </>
                                                     ),
                                                 },
                                             ]}
