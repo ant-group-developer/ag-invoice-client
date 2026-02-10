@@ -933,10 +933,8 @@ export default function Home() {
                                             />
                                         </AppFormItem>
                                         <AppFormItem
-                                            wrapperCol={{ span: 24 }}
                                             label="Account type"
                                             name="accountType"
-                                            required
                                             rules={[
                                                 {
                                                     required: true,
