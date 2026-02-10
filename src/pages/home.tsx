@@ -221,28 +221,6 @@ export default function Home() {
 
             // Custom validation for SWIFT/Routing number
             const data = form.getFieldsValue();
-            const hasSwift = data.swiftCode && data.swiftCode.trim().length > 0;
-            const hasRouting = data.routingNumber;
-
-            if (!hasSwift && !hasRouting) {
-                form.setFields([
-                    {
-                        name: 'swiftCode',
-                        errors: ['Phải có SWIFT code hoặc Routing number'],
-                    },
-                    {
-                        name: 'routingNumber',
-                        errors: ['Phải có SWIFT code hoặc Routing number'],
-                    },
-                ]);
-                return;
-            }
-
-            // Clear custom errors if validation passes
-            form.setFields([
-                { name: 'swiftCode', errors: [] },
-                { name: 'routingNumber', errors: [] },
-            ]);
 
             // Get invoice number from form
             // const invoiceNumber = data.invoiceNumber || 'unknown';
@@ -278,28 +256,6 @@ export default function Home() {
 
             // Custom validation for SWIFT/Routing number
             const data = form.getFieldsValue();
-            const hasSwift = data.swiftCode && data.swiftCode.trim().length > 0;
-            const hasRouting = data.routingNumber;
-
-            if (!hasSwift && !hasRouting) {
-                form.setFields([
-                    {
-                        name: 'swiftCode',
-                        errors: ['Must have SWIFT code or Routing number'],
-                    },
-                    {
-                        name: 'routingNumber',
-                        errors: ['Must have SWIFT code or Routing number'],
-                    },
-                ]);
-                return;
-            }
-
-            // Clear custom errors if validation passes
-            form.setFields([
-                { name: 'swiftCode', errors: [] },
-                { name: 'routingNumber', errors: [] },
-            ]);
 
             // Get invoice number from form
             // const invoiceNumber = data.invoiceNumber || 'unknown';
@@ -375,6 +331,7 @@ export default function Home() {
                         style={{ overflowY: 'auto' }}
                     >
                         <AppForm
+                            size="small"
                             form={form}
                             layout="horizontal"
                             onFinish={onFinish}
@@ -409,10 +366,10 @@ export default function Home() {
                                         <AppFormItem
                                             label="Date"
                                             name="invoiceDate"
-                                            layout="vertical"
                                             required
-                                            wrapperCol={{ span: 24 }}
-                                            labelCol={{ span: 24 }}
+                                            // layout="vertical"
+                                            // wrapperCol={{ span: 24 }}
+                                            // labelCol={{ span: 24 }}
                                             rules={[
                                                 {
                                                     required: true,
@@ -430,13 +387,13 @@ export default function Home() {
                                             />
                                         </AppFormItem>
                                     </Col>
-                                    <Col xs={24} md={10}>
+                                    <Col xs={24} md={8}>
                                         <AppFormItem
                                             label="Invoice No."
                                             name="invoiceNumber"
-                                            layout="vertical"
-                                            labelCol={{ span: 24 }}
-                                            wrapperCol={{ span: 24 }}
+                                            // layout="vertical"
+                                            // labelCol={{ span: 24 }}
+                                            // wrapperCol={{ span: 24 }}
                                             rules={[
                                                 {
                                                     required: true,
@@ -466,13 +423,13 @@ export default function Home() {
                                             />
                                         </AppFormItem>
                                     </Col>
-                                    <Col xs={24} md={6}>
+                                    <Col xs={24} md={8}>
                                         <AppFormItem
                                             label="Currency"
                                             name="currency"
-                                            layout="vertical"
-                                            wrapperCol={{ span: 24 }}
-                                            labelCol={{ span: 24 }}
+                                            // layout="vertical"
+                                            // wrapperCol={{ span: 24 }}
+                                            // labelCol={{ span: 24 }}
                                             rules={[
                                                 {
                                                     required: true,
@@ -839,7 +796,6 @@ export default function Home() {
                                                                                 name
                                                                             )
                                                                         }
-                                                                        size="middle"
                                                                     />
                                                                 </Col>
                                                             </Row>
@@ -918,12 +874,50 @@ export default function Home() {
                                         <AppFormItem
                                             label="SWIFT code"
                                             name="swiftCode"
+                                            rules={[
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        if (
+                                                            value ||
+                                                            getFieldValue(
+                                                                'rountingNumber'
+                                                            )
+                                                        ) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(
+                                                            new Error(
+                                                                'Please enter SWIFT code or Routing number'
+                                                            )
+                                                        );
+                                                    },
+                                                }),
+                                            ]}
                                         >
                                             <Input placeholder="Enter SWIFT code" />
                                         </AppFormItem>
                                         <AppFormItem
                                             label="Routing number"
                                             name="routingNumber"
+                                            rules={[
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        if (
+                                                            value ||
+                                                            getFieldValue(
+                                                                'swiftCode'
+                                                            )
+                                                        ) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(
+                                                            new Error(
+                                                                'Please enter SWIFT code or Routing number'
+                                                            )
+                                                        );
+                                                    },
+                                                }),
+                                            ]}
                                         >
                                             <InputNumber
                                                 style={{
