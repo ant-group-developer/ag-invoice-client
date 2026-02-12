@@ -344,7 +344,6 @@ export default function Home() {
                                 billToTaxId: TAX_ID,
                                 billToCompany: COMPANY_ID,
                                 invoiceDate: dayjs(),
-                                accountType: 'Checking',
                                 currency: 'USD',
                                 s: [
                                     {
@@ -929,15 +928,9 @@ export default function Home() {
                                         <AppFormItem
                                             label="Account type"
                                             name="accountType"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        'Please select account type!',
-                                                },
-                                            ]}
                                         >
                                             <Select
+                                                allowClear
                                                 options={[
                                                     {
                                                         label: 'Checking',
@@ -948,6 +941,7 @@ export default function Home() {
                                                         value: 'Saving',
                                                     },
                                                 ]}
+                                                placeholder="Enter account type"
                                             />
                                         </AppFormItem>
                                         <AppFormItem
