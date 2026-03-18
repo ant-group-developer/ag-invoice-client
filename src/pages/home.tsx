@@ -155,7 +155,7 @@ export default function Home() {
                 }),
                 signatureImage,
                 poLabel: isHasPoValue ? 'PO' : undefined,
-                taxIdLabel: isHasTaxIdValue ? 'Tax ID' : undefined,
+                taxIdLabel: isHasTaxIdValue ? 'Tax ID:' : undefined,
             };
 
             generateDocument({
