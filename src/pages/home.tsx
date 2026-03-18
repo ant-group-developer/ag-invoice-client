@@ -132,6 +132,7 @@ export default function Home() {
                 return lines.join('\n');
             };
             const isHasPoValue = !!data?.po && data?.po?.length > 0;
+            const isHasTaxIdValue = !!data?.taxId && data?.taxId?.length > 0;
             // Format amount fields with currency-specific number format
             const formattedData = {
                 ...data,
@@ -153,7 +154,8 @@ export default function Home() {
                     maximumFractionDigits: 2,
                 }),
                 signatureImage,
-                poHeader: isHasPoValue ? 'PO' : undefined,
+                poLabel: isHasPoValue ? 'PO' : undefined,
+                taxIdLabel: isHasTaxIdValue ? 'Tax ID' : undefined,
             };
 
             generateDocument({
@@ -526,6 +528,13 @@ export default function Home() {
                                             ]}
                                         >
                                             <Input placeholder="Enter email" />
+                                        </AppFormItem>
+                                        <AppFormItem
+                                            wrapperCol={{ span: 24 }}
+                                            label="Tax ID"
+                                            name="taxId"
+                                        >
+                                            <Input placeholder="Enter tax ID" />
                                         </AppFormItem>
                                     </Card>
                                 </Col>
