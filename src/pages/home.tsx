@@ -118,8 +118,6 @@ export default function Home() {
                     .filter((line) => line.trim().length > 0);
                 return lines.join('\n');
             };
-            const isHasPoValue = !!data?.po && data?.po?.length > 0;
-            const isHasTaxIdValue = !!data?.taxId && data?.taxId?.length > 0;
             // const isHasRoutingNumber =
             //     !!data?.routingNumber && String(data?.routingNumber).length > 0;
             // const isHasAccountType =
@@ -131,7 +129,6 @@ export default function Home() {
                 symbolCurrency,
                 partnerAddress: cleanAddress(data.partnerAddress || ''),
                 billToAddress: cleanAddress(data.billToAddress || ''),
-                bankAddress: cleanAddress(data.bankAddress || ''),
                 s: data?.s?.map((item: any) => ({
                     ...item,
                     description: item.description?.trim(),
@@ -145,8 +142,13 @@ export default function Home() {
                     maximumFractionDigits: 2,
                 }),
                 signatureImage,
-                poLabel: isHasPoValue ? 'PO' : undefined,
-                taxIdLabel: isHasTaxIdValue ? 'Tax ID:' : undefined,
+                routingNumber: data.routingNumber || undefined,
+                taxId: data.taxId || undefined,
+                po: data.po || undefined,
+                accountType: data.accountType || undefined,
+                bankAddress: data.bankAddress
+                    ? cleanAddress(data.bankAddress || '')
+                    : undefined,
             };
 
             generateDocument({

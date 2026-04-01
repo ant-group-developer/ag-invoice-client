@@ -23,13 +23,13 @@ export const BillToSection = () => {
                 wrapperCol={{ span: 24 }}
                 label="Company"
                 name="billToCompany"
-                required
-                rules={[
-                    {
-                        required: true,
-                        message: 'Please input company!',
-                    },
-                ]}
+                // required
+                // rules={[
+                //     {
+                //         required: true,
+                //         message: 'Please input company!',
+                //     },
+                // ]}
             >
                 <Input placeholder="Enter company" />
             </AppFormItem>
@@ -37,13 +37,13 @@ export const BillToSection = () => {
                 wrapperCol={{ span: 24 }}
                 label="Tax ID"
                 name="billToTaxId"
-                required
-                rules={[
-                    {
-                        required: true,
-                        message: 'Please input tax ID!',
-                    },
-                ]}
+                // required
+                // rules={[
+                //     {
+                //         required: true,
+                //         message: 'Please input tax ID!',
+                //     },
+                // ]}
             >
                 <Input placeholder="Enter tax ID" />
             </AppFormItem>
