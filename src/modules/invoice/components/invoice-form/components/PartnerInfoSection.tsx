@@ -61,12 +61,7 @@ export const PartnerInfoSection = () => {
                 wrapperCol={{ span: 24 }}
                 label="Email"
                 name="partnerEmail"
-                required
                 rules={[
-                    {
-                        required: true,
-                        message: 'Please input email!',
-                    },
                     {
                         type: 'email',
                         message: 'Please enter a valid email!',
