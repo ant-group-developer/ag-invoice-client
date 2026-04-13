@@ -19,16 +19,17 @@ export const SignatureSection = ({
     saveSignature,
 }: SignatureSectionProps) => {
     return (
-        <Card size="small" title="Signature">
+        <Card size="small" title="Signature" style={{ height: '100%' }}>
             <Tabs
                 activeKey={activeTab}
                 onChange={setActiveTab}
+                className="h-full"
                 items={[
                     {
                         key: 'draw',
                         label: 'Draw Signature',
                         children: (
-                            <>
+                            <div>
                                 <AppFormItem
                                     label="Full name"
                                     name="fullname"
@@ -104,14 +105,14 @@ export const SignatureSection = ({
                                         </div>
                                     </div>
                                 </AppFormItem>
-                            </>
+                            </div>
                         ),
                     },
                     {
                         key: 'upload',
                         label: 'Upload Signature',
                         children: (
-                            <>
+                            <div>
                                 <AppFormItem
                                     name="fullname"
                                     label="Full name"
@@ -136,7 +137,7 @@ export const SignatureSection = ({
                                 <AppFormItem label="" name="signatureUpload">
                                     <ImageListUpload maxCount={1} />
                                 </AppFormItem>
-                            </>
+                            </div>
                         ),
                     },
                 ]}

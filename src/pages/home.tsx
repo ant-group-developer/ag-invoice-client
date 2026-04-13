@@ -7,7 +7,13 @@ import type { FormProps } from 'antd';
 import { Button, Card, Col, Dropdown, Form, Row, Space } from 'antd';
 import dayjs from 'dayjs';
 import { Eye } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ChangeEvent,
+} from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { DATE_FORMAT } from '../common/enums/common';
 import { formattedDate } from '../common/helpers/date';
@@ -47,8 +53,13 @@ export default function Home() {
         '/preview/template-user.docx'
     );
     const [activeTab, setActiveTab] = useState<string>('draw');
+    const [pendingSignatureCanvas, setPendingSignatureCanvas] =
+        useState<string>('');
+    const [shouldRefreshPreviewAfterImport, setShouldRefreshPreviewAfterImport] =
+        useState(false);
     const { convertToPdf, isPending } = useConvertWordToPdf();
     const signatureRef = useRef<SignatureCanvas>(null);
+    const importInputRef = useRef<HTMLInputElement>(null);
 
     const currencyOptions = [
         { value: 'EUR', label: 'EUR (€)', locale: 'de-DE', symbol: '€' },
@@ -82,7 +93,20 @@ export default function Home() {
         console.log('Form values:', values);
     };
 
-    const handlePreview = () => {
+    const getCurrentDrawSignature = useCallback(() => {
+        const formSignature = form.getFieldValue('signatureCanvas');
+
+        if (signatureRef.current) {
+            const canvasSignature = signatureRef.current.toDataURL();
+            if (canvasSignature && canvasSignature !== 'data:,') {
+                return canvasSignature;
+            }
+        }
+
+        return formSignature || '';
+    }, [form]);
+
+    const handlePreview = useCallback(() => {
         const data = form.getFieldsValue();
         const invoiceDate = formattedDate(
             data.invoiceDate,
@@ -166,19 +190,16 @@ export default function Home() {
         };
 
         // Only use canvas signature if draw tab is active
-        if (
-            activeTab === 'draw' &&
-            signatureRef.current &&
-            !signatureRef.current.isEmpty()
-        ) {
-            signatureImage = signatureRef.current.toDataURL();
+        if (activeTab === 'draw') {
+            signatureImage = getCurrentDrawSignature();
         } else if (
             activeTab === 'upload' &&
             data.signatureUpload &&
             data.signatureUpload?.fileList?.length > 0
         ) {
             // Convert file to base64 for Word document
-            const file = data.signatureUpload.fileList[0].originFileObj;
+            const currentUpload = data.signatureUpload.fileList[0];
+            const file = currentUpload.originFileObj;
             if (file) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -188,10 +209,17 @@ export default function Home() {
                 reader.readAsDataURL(file);
                 return; // Exit early, will continue in onload callback
             }
+
+            if (currentUpload.url || currentUpload.preview) {
+                generateDocWithSignature(
+                    currentUpload.url || currentUpload.preview
+                );
+                return;
+            }
         }
 
         generateDocWithSignature(signatureImage);
-    };
+    }, [activeTab, form, getCurrentDrawSignature]);
 
     const clearSignature = () => {
         if (signatureRef.current) {
@@ -202,8 +230,8 @@ export default function Home() {
     };
 
     const saveSignature = () => {
-        if (signatureRef.current && !signatureRef.current.isEmpty()) {
-            const signatureData = signatureRef.current.toDataURL();
+        const signatureData = getCurrentDrawSignature();
+        if (signatureData) {
             form.setFieldValue('signatureCanvas', signatureData);
             handlePreview();
         }
@@ -284,11 +312,165 @@ export default function Home() {
         }
     };
 
+    const fileToBase64 = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+    const handleExportFormData = async () => {
+        try {
+            const data = form.getFieldsValue(true);
+            let signatureUploadBase64 = '';
+            const signatureCanvas =
+                activeTab === 'draw'
+                    ? getCurrentDrawSignature()
+                    : data.signatureCanvas || '';
+
+            const uploadFile =
+                data.signatureUpload?.fileList?.[0]?.originFileObj;
+            if (uploadFile instanceof File) {
+                signatureUploadBase64 = await fileToBase64(uploadFile);
+            } else if (data.signatureUploadBase64) {
+                signatureUploadBase64 = data.signatureUploadBase64;
+            }
+
+            const exportPayload = {
+                version: 1,
+                type: 'ant-invoice-form',
+                exportedAt: new Date().toISOString(),
+                data: {
+                    ...data,
+                    invoiceDate: data.invoiceDate
+                        ? dayjs(data.invoiceDate).format(DATE_FORMAT.DATE_ONLY)
+                        : null,
+                    activeTab,
+                    signatureCanvas,
+                    signatureUploadBase64,
+                    signatureUpload: undefined,
+                },
+            };
+
+            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+                type: 'application/json',
+            });
+            const filename = `${data.invoiceNumber || 'invoice'}-profile.json`;
+            downloadBlob(blob, filename);
+        } catch (error) {
+            console.error('Error exporting form data:', error);
+        }
+    };
+
+    const handleImportButtonClick = () => {
+        importInputRef.current?.click();
+    };
+
+    const handleImportFormData = async (
+        event: ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const fileText = await file.text();
+            const parsed = JSON.parse(fileText);
+
+            if (parsed?.type !== 'ant-invoice-form' || !parsed?.data) {
+                throw new Error('Invalid import file format');
+            }
+
+            const importedData = parsed.data;
+            const restoredUpload =
+                importedData.signatureUploadBase64 &&
+                importedData.activeTab === 'upload'
+                    ? {
+                          fileList: [
+                              {
+                                  uid: '-1',
+                                  name: 'signature-imported.png',
+                                  status: 'done',
+                                  url: importedData.signatureUploadBase64,
+                              },
+                          ],
+                      }
+                    : undefined;
+
+            form.resetFields();
+
+            if (signatureRef.current) {
+                signatureRef.current.clear();
+            }
+
+            form.setFieldsValue({
+                ...importedData,
+                invoiceDate: importedData.invoiceDate
+                    ? dayjs(importedData.invoiceDate, DATE_FORMAT.DATE_ONLY)
+                    : null,
+                signatureUpload: restoredUpload,
+            });
+
+            if (importedData.invoiceNumber) {
+                setInvoiceNumber(importedData.invoiceNumber);
+            }
+
+            setActiveTab(importedData.activeTab || 'draw');
+            setPendingSignatureCanvas(
+                importedData.activeTab === 'draw'
+                    ? importedData.signatureCanvas || ''
+                    : ''
+            );
+            setShouldRefreshPreviewAfterImport(true);
+        } catch (error) {
+            console.error('Error importing form data:', error);
+        } finally {
+            event.target.value = '';
+        }
+    };
+
     useEffect(() => {
         form.setFieldsValue({
             invoiceNumber,
         });
     }, [form, invoiceNumber]);
+
+    useEffect(() => {
+        if (
+            activeTab !== 'draw' ||
+            !pendingSignatureCanvas ||
+            !signatureRef.current
+        ) {
+            return;
+        }
+
+        const canvas = signatureRef.current.getCanvas();
+        const ctx = canvas.getContext('2d');
+        const image = new Image();
+
+        image.onload = () => {
+            ctx?.clearRect(0, 0, canvas.width, canvas.height);
+            ctx?.drawImage(image, 0, 0, canvas.width, canvas.height);
+            form.setFieldValue('signatureCanvas', pendingSignatureCanvas);
+            setPendingSignatureCanvas('');
+            setTimeout(() => handlePreview(), 0);
+        };
+
+        image.src = pendingSignatureCanvas;
+    }, [activeTab, form, handlePreview, pendingSignatureCanvas]);
+
+    useEffect(() => {
+        if (!shouldRefreshPreviewAfterImport) {
+            return;
+        }
+
+        if (activeTab === 'draw' && pendingSignatureCanvas) {
+            return;
+        }
+
+        setShouldRefreshPreviewAfterImport(false);
+        setTimeout(() => handlePreview(), 0);
+    }, [activeTab, handlePreview, pendingSignatureCanvas, shouldRefreshPreviewAfterImport]);
 
     const downloadMenuItems = [
         {
@@ -356,6 +538,10 @@ export default function Home() {
                                     handleInvoiceDateChange
                                 }
                                 handleReloadInvoice={handleReloadInvoice}
+                                handleExportFormData={handleExportFormData}
+                                handleImportButtonClick={
+                                    handleImportButtonClick
+                                }
                                 currencyOptions={currencyOptions}
                             />
 
@@ -420,6 +606,13 @@ export default function Home() {
                                             {' '}
                                             Preview
                                         </Button>
+                                        <input
+                                            ref={importInputRef}
+                                            type="file"
+                                            accept=".json"
+                                            onChange={handleImportFormData}
+                                            hidden
+                                        />
                                         <Space.Compact>
                                             <Button
                                                 size="small"

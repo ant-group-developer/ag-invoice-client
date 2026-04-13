@@ -1,4 +1,8 @@
-import { ReloadOutlined } from '@ant-design/icons';
+import {
+    ExportOutlined,
+    ImportOutlined,
+    ReloadOutlined,
+} from '@ant-design/icons';
 import { Button, Card, Col, DatePicker, Input, Row, Select } from 'antd';
 import { DATE_FORMAT } from '../../../../../common/enums/common';
 import AppFormItem from '../../../../../components/UI/antd-form/form-Item';
@@ -7,6 +11,8 @@ interface InvoiceInfoSectionProps {
     invoiceNumber: string;
     handleInvoiceDateChange: (date: any) => void;
     handleReloadInvoice: () => void;
+    handleExportFormData: () => void;
+    handleImportButtonClick: () => void;
     currencyOptions: {
         value: string;
         label: string;
@@ -19,10 +25,34 @@ export const InvoiceInfoSection = ({
     invoiceNumber,
     handleInvoiceDateChange,
     handleReloadInvoice,
+    handleExportFormData,
+    handleImportButtonClick,
     currencyOptions,
 }: InvoiceInfoSectionProps) => {
     return (
-        <Card size="small" title="Invoice Information" className="mb-4!">
+        <Card
+            size="small"
+            title="Invoice Information"
+            className="mb-4!"
+            extra={
+                <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                        size="small"
+                        icon={<ExportOutlined />}
+                        onClick={handleExportFormData}
+                    >
+                        Export Data
+                    </Button>
+                    <Button
+                        size="small"
+                        icon={<ImportOutlined />}
+                        onClick={handleImportButtonClick}
+                    >
+                        Import Data
+                    </Button>
+                </div>
+            }
+        >
             <Row gutter={16}>
                 <Col xs={24} md={8}>
                     <AppFormItem
