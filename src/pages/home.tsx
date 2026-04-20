@@ -17,6 +17,10 @@ import {
 import SignatureCanvas from 'react-signature-canvas';
 import { DATE_FORMAT } from '../common/enums/common';
 import { formattedDate } from '../common/helpers/date';
+import {
+    removeVietnameseTones,
+    sanitizeInvoiceData,
+} from '../common/helpers/string';
 import AppForm from '../components/UI/antd-form/form';
 import DocxViewer from '../modules/invoice/components/docx-preview';
 import { BankInfoSection } from '../modules/invoice/components/invoice-form/components/BankInfoSection';
@@ -176,7 +180,7 @@ export default function Home() {
             };
 
             generateDocument({
-                data: formattedData,
+                data: sanitizeInvoiceData(formattedData),
                 readUrl: '/preview/template.docx',
                 onPreview(blobUrl: string) {
                     setLinkPreview(blobUrl);
@@ -254,7 +258,7 @@ export default function Home() {
             const billToName = data.billToName;
 
             // const timestamp = Date.now();
-            const filename = `${partnerName} - ${billToName}`;
+            const filename = removeVietnameseTones(`${partnerName} - ${billToName}`);
 
             if (linkPreview === '/preview/template.docx') {
                 // Fetch and download the original template file
@@ -286,7 +290,7 @@ export default function Home() {
             const billToName = data.billToName;
 
             // const timestamp = Date.now();
-            const filename = `${partnerName} - ${billToName}`;
+            const filename = removeVietnameseTones(`${partnerName} - ${billToName}`);
 
             // Fetch the current preview blob
             const response = await fetch(linkPreview);
