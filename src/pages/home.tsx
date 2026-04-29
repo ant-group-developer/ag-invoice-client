@@ -537,7 +537,7 @@ export default function Home() {
                         >
                             {/* Invoice Information */}
                             <InvoiceInfoSection
-                                invoiceNumber={invoiceNumber}
+
                                 handleInvoiceDateChange={
                                     handleInvoiceDateChange
                                 }

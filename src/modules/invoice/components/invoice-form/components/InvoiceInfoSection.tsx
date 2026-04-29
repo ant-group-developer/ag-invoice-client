@@ -8,7 +8,7 @@ import { DATE_FORMAT } from '../../../../../common/enums/common';
 import AppFormItem from '../../../../../components/UI/antd-form/form-Item';
 
 interface InvoiceInfoSectionProps {
-    invoiceNumber: string;
+
     handleInvoiceDateChange: (date: any) => void;
     handleReloadInvoice: () => void;
     handleExportFormData: () => void;
@@ -22,7 +22,7 @@ interface InvoiceInfoSectionProps {
 }
 
 export const InvoiceInfoSection = ({
-    invoiceNumber,
+
     handleInvoiceDateChange,
     handleReloadInvoice,
     handleExportFormData,
@@ -86,9 +86,9 @@ export const InvoiceInfoSection = ({
                         required
                     >
                         <Input
-                            readOnly
-                            value={invoiceNumber}
-                            placeholder="Invoice number will auto-generate"
+
+
+                            placeholder="Enter invoice number"
                             suffix={
                                 <Button
                                     type="text"

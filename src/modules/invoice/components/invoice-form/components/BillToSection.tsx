@@ -21,7 +21,7 @@ export const BillToSection = () => {
             </AppFormItem>
             <AppFormItem
                 wrapperCol={{ span: 24 }}
-                label="Company"
+                label="Company ID"
                 name="billToCompany"
                 // required
                 // rules={[
