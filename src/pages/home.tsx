@@ -1,10 +1,9 @@
 import {
     // DownOutlined,
     FilePdfOutlined,
-    // FileWordOutlined,
 } from '@ant-design/icons';
 import type { FormProps } from 'antd';
-import { Button, Card, Col, /* Dropdown, */ Form, Row, /* Space */ } from 'antd';
+import { Button, Card, Col, /* Dropdown, */ Form, Row /* Space */ } from 'antd';
 import dayjs from 'dayjs';
 import { Eye } from 'lucide-react';
 import {
@@ -59,8 +58,10 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<string>('draw');
     const [pendingSignatureCanvas, setPendingSignatureCanvas] =
         useState<string>('');
-    const [shouldRefreshPreviewAfterImport, setShouldRefreshPreviewAfterImport] =
-        useState(false);
+    const [
+        shouldRefreshPreviewAfterImport,
+        setShouldRefreshPreviewAfterImport,
+    ] = useState(false);
     const { convertToPdf, isPending } = useConvertWordToPdf();
     const signatureRef = useRef<SignatureCanvas>(null);
     const importInputRef = useRef<HTMLInputElement>(null);
@@ -284,7 +285,9 @@ export default function Home() {
             const billToName = data.billToName;
 
             // const timestamp = Date.now();
-            const filename = removeVietnameseTones(`${partnerName} - ${billToName}`);
+            const filename = removeVietnameseTones(
+                `${partnerName} - ${billToName}`
+            );
 
             // Fetch the current preview blob
             const response = await fetch(linkPreview);
@@ -468,7 +471,12 @@ export default function Home() {
 
         setShouldRefreshPreviewAfterImport(false);
         setTimeout(() => handlePreview(), 0);
-    }, [activeTab, handlePreview, pendingSignatureCanvas, shouldRefreshPreviewAfterImport]);
+    }, [
+        activeTab,
+        handlePreview,
+        pendingSignatureCanvas,
+        shouldRefreshPreviewAfterImport,
+    ]);
 
     // const downloadMenuItems = [
     //     {
@@ -531,7 +539,6 @@ export default function Home() {
                         >
                             {/* Invoice Information */}
                             <InvoiceInfoSection
-
                                 handleInvoiceDateChange={
                                     handleInvoiceDateChange
                                 }
