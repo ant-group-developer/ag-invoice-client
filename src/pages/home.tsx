@@ -1,10 +1,10 @@
 import {
-    DownOutlined,
+    // DownOutlined,
     FilePdfOutlined,
-    FileWordOutlined,
+    // FileWordOutlined,
 } from '@ant-design/icons';
 import type { FormProps } from 'antd';
-import { Button, Card, Col, Dropdown, Form, Row, Space } from 'antd';
+import { Button, Card, Col, /* Dropdown, */ Form, Row, /* Space */ } from 'antd';
 import dayjs from 'dayjs';
 import { Eye } from 'lucide-react';
 import {
@@ -241,40 +241,34 @@ export default function Home() {
         }
     };
 
-    const handleDownloadWord = async () => {
-        try {
-            // Validate form first
-            await form.validateFields();
-
-            // Custom validation for SWIFT/Routing number
-            const data = form.getFieldsValue();
-
-            // Get invoice number from form
-            // const invoiceNumber = data.invoiceNumber || 'unknown';
-            // const timestamp = Date.now();
-            // const filename = `${invoiceNumber}-${timestamp}.docx`;
-
-            const partnerName = data.partnerName;
-            const billToName = data.billToName;
-
-            // const timestamp = Date.now();
-            const filename = removeVietnameseTones(`${partnerName} - ${billToName}`);
-
-            if (linkPreview === '/preview/template.docx') {
-                // Fetch and download the original template file
-                const response = await fetch(linkPreview);
-                const blob = await response.blob();
-                downloadBlob(blob, filename);
-            } else {
-                // Fetch and download the preview blob
-                const response = await fetch(linkPreview);
-                const blob = await response.blob();
-                downloadBlob(blob, filename);
-            }
-        } catch (error) {
-            console.error('Form validation failed:', error);
-        }
-    };
+    // const handleDownloadWord = async () => {
+    //     try {
+    //         // Validate form first
+    //         await form.validateFields();
+    //
+    //         // Custom validation for SWIFT/Routing number
+    //         const data = form.getFieldsValue();
+    //
+    //         const partnerName = data.partnerName;
+    //         const billToName = data.billToName;
+    //
+    //         const filename = removeVietnameseTones(`${partnerName} - ${billToName}`);
+    //
+    //         if (linkPreview === '/preview/template.docx') {
+    //             // Fetch and download the original template file
+    //             const response = await fetch(linkPreview);
+    //             const blob = await response.blob();
+    //             downloadBlob(blob, filename);
+    //         } else {
+    //             // Fetch and download the preview blob
+    //             const response = await fetch(linkPreview);
+    //             const blob = await response.blob();
+    //             downloadBlob(blob, filename);
+    //         }
+    //     } catch (error) {
+    //         console.error('Form validation failed:', error);
+    //     }
+    // };
 
     const handleDownloadPdf = async () => {
         try {
@@ -476,14 +470,14 @@ export default function Home() {
         setTimeout(() => handlePreview(), 0);
     }, [activeTab, handlePreview, pendingSignatureCanvas, shouldRefreshPreviewAfterImport]);
 
-    const downloadMenuItems = [
-        {
-            key: 'word',
-            label: 'Download Word',
-            icon: <FileWordOutlined />,
-            onClick: handleDownloadWord,
-        },
-    ];
+    // const downloadMenuItems = [
+    //     {
+    //         key: 'word',
+    //         label: 'Download Word',
+    //         icon: <FileWordOutlined />,
+    //         onClick: handleDownloadWord,
+    //     },
+    // ];
 
     // Update invoice number when invoice date changes
     const handleInvoiceDateChange = (date: any) => {
@@ -617,28 +611,28 @@ export default function Home() {
                                             onChange={handleImportFormData}
                                             hidden
                                         />
-                                        <Space.Compact>
+                                        {/* <Space.Compact> */}
+                                        <Button
+                                            size="small"
+                                            loading={isPending}
+                                            icon={<FilePdfOutlined />}
+                                            type="primary"
+                                            onClick={handleDownloadPdf}
+                                        >
+                                            Download PDF
+                                        </Button>
+                                        {/* <Dropdown
+                                            menu={{
+                                                items: downloadMenuItems,
+                                            }}
+                                        >
                                             <Button
-                                                size="small"
-                                                loading={isPending}
-                                                icon={<FilePdfOutlined />}
                                                 type="primary"
-                                                onClick={handleDownloadPdf}
-                                            >
-                                                Download PDF
-                                            </Button>
-                                            <Dropdown
-                                                menu={{
-                                                    items: downloadMenuItems,
-                                                }}
-                                            >
-                                                <Button
-                                                    type="primary"
-                                                    size="small"
-                                                    icon={<DownOutlined />}
-                                                />
-                                            </Dropdown>
-                                        </Space.Compact>
+                                                size="small"
+                                                icon={<DownOutlined />}
+                                            />
+                                        </Dropdown>
+                                        </Space.Compact> */}
                                     </div>
                                 </div>
                             }
