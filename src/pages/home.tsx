@@ -338,15 +338,15 @@ export default function Home() {
                 signatureUploadBase64 = data.signatureUploadBase64;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { invoiceDate, invoiceNumber, ...restData } = data;
+
             const exportPayload = {
                 version: 1,
                 type: 'ant-invoice-form',
                 exportedAt: new Date().toISOString(),
                 data: {
-                    ...data,
-                    invoiceDate: data.invoiceDate
-                        ? dayjs(data.invoiceDate).format(DATE_FORMAT.DATE_ONLY)
-                        : null,
+                    ...restData,
                     activeTab,
                     signatureCanvas,
                     signatureUploadBase64,
@@ -404,17 +404,17 @@ export default function Home() {
                 signatureRef.current.clear();
             }
 
+            // Generate fresh invoiceDate and invoiceNumber on import
+            const newInvoiceNumber = generateRandomSuffix();
+
             form.setFieldsValue({
                 ...importedData,
-                invoiceDate: importedData.invoiceDate
-                    ? dayjs(importedData.invoiceDate, DATE_FORMAT.DATE_ONLY)
-                    : null,
+                invoiceDate: dayjs(),
+                invoiceNumber: newInvoiceNumber,
                 signatureUpload: restoredUpload,
             });
 
-            if (importedData.invoiceNumber) {
-                setInvoiceNumber(importedData.invoiceNumber);
-            }
+            setInvoiceNumber(newInvoiceNumber);
 
             setActiveTab(importedData.activeTab || 'draw');
             setPendingSignatureCanvas(
