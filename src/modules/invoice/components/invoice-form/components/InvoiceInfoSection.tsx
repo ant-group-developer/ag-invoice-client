@@ -6,23 +6,17 @@ import {
 import { Button, Card, Col, DatePicker, Input, Row, Select } from 'antd';
 import { DATE_FORMAT } from '../../../../../common/enums/common';
 import AppFormItem from '../../../../../components/UI/antd-form/form-Item';
+import type { CurrencyOption } from '../../../constants';
 
 interface InvoiceInfoSectionProps {
-
     handleInvoiceDateChange: (date: any) => void;
     handleReloadInvoice: () => void;
     handleExportFormData: () => void;
     handleImportButtonClick: () => void;
-    currencyOptions: {
-        value: string;
-        label: string;
-        locale: string;
-        symbol: string;
-    }[];
+    currencyOptions: CurrencyOption[];
 }
 
 export const InvoiceInfoSection = ({
-
     handleInvoiceDateChange,
     handleReloadInvoice,
     handleExportFormData,
@@ -86,8 +80,6 @@ export const InvoiceInfoSection = ({
                         required
                     >
                         <Input
-
-
                             placeholder="Enter invoice number"
                             suffix={
                                 <Button
@@ -115,9 +107,26 @@ export const InvoiceInfoSection = ({
                     >
                         <Select
                             placeholder="Select currency"
-                            options={currencyOptions}
                             style={{ width: '100%' }}
-                        />
+                            optionLabelProp="label"
+                        >
+                            {currencyOptions.map((item) => (
+                                <Select.Option
+                                    key={item.value}
+                                    value={item.value}
+                                    label={`${item.value} (${item.symbol})`}
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-medium">
+                                            {item.value} ({item.symbol})
+                                        </span>
+                                        <span className="text-xs text-zinc-400">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </AppFormItem>
                 </Col>
             </Row>
