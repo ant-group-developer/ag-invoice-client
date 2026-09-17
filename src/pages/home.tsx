@@ -33,6 +33,8 @@ import {
     COMPANY_ID,
     COMPANY_NAME,
     TAX_ID,
+    CURRENCY_OPTIONS,
+    getCurrencyOption,
 } from '../modules/invoice/constants';
 import { downloadBlob, generateDocument } from '../modules/invoice/helpers';
 import { useConvertWordToPdf } from '../modules/invoice/hooks/use-convert-word-to-pdf';
@@ -66,15 +68,7 @@ export default function Home() {
     const signatureRef = useRef<SignatureCanvas>(null);
     const importInputRef = useRef<HTMLInputElement>(null);
 
-    const currencyOptions = [
-        { value: 'EUR', label: 'EUR (€)', locale: 'de-DE', symbol: '€' },
-        { value: 'USD', label: 'USD ($)', locale: 'en-US', symbol: '$' },
-        { value: 'GBP', label: 'GBP (£)', locale: 'en-GB', symbol: '£' },
-        { value: 'SGD', label: 'SGD (S$)', locale: 'en-SG', symbol: 'S$' },
-        { value: 'HKD', label: 'HKD (HK$)', locale: 'zh-HK', symbol: 'HK$' },
-        { value: 'CNY', label: 'CNY (¥)', locale: 'zh-CN', symbol: '¥' },
-        { value: 'VND', label: 'VND (₫)', locale: 'vi-VN', symbol: '₫' },
-    ];
+    const currencyOptions = CURRENCY_OPTIONS;
 
     const handleReloadInvoice = () => {
         // Get current invoice date from form, fallback to today
@@ -117,26 +111,66 @@ export default function Home() {
             data.invoiceDate,
             DATE_FORMAT.DATE_ONLY
         );
-        const total = data?.s?.reduce(
-            (acc: number, s: any) => acc + Number(s.amount || 0),
-            0
-        );
-        // Get currency symbol
-        const selectedCurrency = currencyOptions.find(
-            (option) => option.value === data.currency
-        );
-        const symbolCurrency = selectedCurrency?.symbol || '';
+
+        const fallbackCurrency = getCurrencyOption(data.currency);
+
+        // Group total by currency
+        const totalsMap = new Map<string, number>();
+        (data?.s || []).forEach((item: any) => {
+            if (!item) return;
+            const itemCurrency =
+                item.currency || data.currency || 'USD';
+            const amt = Number(item.amount || 0);
+            totalsMap.set(
+                itemCurrency,
+                (totalsMap.get(itemCurrency) || 0) + amt
+            );
+        });
+
+        const currencyEntries = Array.from(totalsMap.entries());
+
+        let docSymbolCurrency = '';
+        let docTotal = '';
+
+        if (currencyEntries.length === 0) {
+            docSymbolCurrency = fallbackCurrency.symbol;
+            docTotal = (0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        } else if (currencyEntries.length === 1) {
+            const [currencyCode, sum] = currencyEntries[0];
+            const curOpt = getCurrencyOption(currencyCode);
+            docSymbolCurrency = curOpt.symbol;
+            docTotal = sum.toLocaleString(curOpt.locale || 'en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        } else {
+            const formattedLines = currencyEntries.map(
+                ([currencyCode, sum], index) => {
+                    const curOpt = getCurrencyOption(currencyCode);
+                    const formattedAmount = sum.toLocaleString(
+                        curOpt.locale || 'en-US',
+                        {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        }
+                    );
+                    if (index === 0) {
+                        docSymbolCurrency = curOpt.symbol;
+                        return formattedAmount;
+                    }
+                    return `${curOpt.symbol} ${formattedAmount}`;
+                }
+            );
+            docTotal = formattedLines.join('\n');
+        }
 
         // Get signature data - prioritize uploaded image over canvas signature
         let signatureImage = '';
 
         const generateDocWithSignature = (signatureImage: string) => {
-            // Get locale from selected currency
-            const selectedCurrency = currencyOptions.find(
-                (option) => option.value === data.currency
-            );
-            const locale = selectedCurrency?.locale || 'en-US';
-
             // Helper function to clean address fields
             const cleanAddress = (address: string) => {
                 if (!address) return '';
@@ -147,29 +181,32 @@ export default function Home() {
                     .filter((line) => line.trim().length > 0);
                 return lines.join('\n');
             };
-            // const isHasRoutingNumber =
-            //     !!data?.routingNumber && String(data?.routingNumber).length > 0;
-            // const isHasAccountType =
-            //     !!data?.accountType && data?.accountType?.length > 0;
+
             // Format amount fields with currency-specific number format
             const formattedData = {
                 ...data,
                 invoiceDate,
-                symbolCurrency,
+                symbolCurrency: docSymbolCurrency,
                 partnerAddress: cleanAddress(data.partnerAddress || ''),
                 billToAddress: cleanAddress(data.billToAddress || ''),
-                s: data?.s?.map((item: any) => ({
-                    ...item,
-                    description: item.description?.trim(),
-                    amount: Number(item.amount || 0).toLocaleString(locale, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                    }),
-                })),
-                total: total.toLocaleString(locale, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
+                s: data?.s?.map((item: any) => {
+                    const itemCurrency = getCurrencyOption(
+                        item.currency || data.currency || 'USD'
+                    );
+                    return {
+                        ...item,
+                        description: item.description?.trim(),
+                        symbolCurrency: itemCurrency.symbol,
+                        amount: Number(item.amount || 0).toLocaleString(
+                            itemCurrency.locale || 'en-US',
+                            {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            }
+                        ),
+                    };
                 }),
+                total: docTotal,
                 signatureImage,
                 routingNumber: data.routingNumber || undefined,
                 taxId: data.taxId || undefined,
@@ -407,8 +444,18 @@ export default function Home() {
             // Generate fresh invoiceDate and invoiceNumber on import
             const newInvoiceNumber = generateRandomSuffix();
 
+            // Normalize items to ensure currency is set
+            const normalizedItems = Array.isArray(importedData.s)
+                ? importedData.s.map((item: any) => ({
+                      ...item,
+                      currency:
+                          item.currency || importedData.currency || 'USD',
+                  }))
+                : importedData.s;
+
             form.setFieldsValue({
                 ...importedData,
+                s: normalizedItems,
                 invoiceDate: dayjs(),
                 invoiceNumber: newInvoiceNumber,
                 signatureUpload: restoredUpload,
@@ -531,6 +578,7 @@ export default function Home() {
                                 s: [
                                     {
                                         description: 'Revenue Youtube MM/YYYY',
+                                        currency: 'USD',
                                         amount: 0,
                                     },
                                 ],
