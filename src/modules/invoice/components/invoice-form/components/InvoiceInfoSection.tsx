@@ -6,7 +6,7 @@ import {
 import { Button, Card, Col, DatePicker, Input, Row, Select } from 'antd';
 import { DATE_FORMAT } from '../../../../../common/enums/common';
 import AppFormItem from '../../../../../components/UI/antd-form/form-Item';
-import { CurrencyOption } from '../../../constants';
+import type { CurrencyOption } from '../../../constants';
 
 interface InvoiceInfoSectionProps {
     handleInvoiceDateChange: (date: any) => void;
@@ -80,8 +80,6 @@ export const InvoiceInfoSection = ({
                         required
                     >
                         <Input
-
-
                             placeholder="Enter invoice number"
                             suffix={
                                 <Button
@@ -122,7 +120,7 @@ export const InvoiceInfoSection = ({
                                         <span className="font-medium">
                                             {item.value} ({item.symbol})
                                         </span>
-                                        <span className="text-zinc-400 text-xs">
+                                        <span className="text-xs text-zinc-400">
                                             {item.name}
                                         </span>
                                     </div>
